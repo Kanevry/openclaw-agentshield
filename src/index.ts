@@ -278,56 +278,53 @@ export default {
     );
 
     // ── Dashboard HTTP Routes ───────────────────────────────────────
-    // GET /agentshield — HTML dashboard
+    // All routes use auth: "plugin" (no gateway auth required for dashboard)
+
+    // GET /agentshield — HTML dashboard (prefix match for static assets)
     api.registerHttpRoute({
       path: "/agentshield",
-      handler: (_req, res) => {
+      auth: "plugin",
+      match: "prefix",
+      handler: (req, res) => {
+        const url = req.url ?? "";
+
+        // SSE stream
+        if (url.includes("/agentshield/events")) {
+          res.setHeader("Content-Type", "text/event-stream");
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Connection", "keep-alive");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+
+          const unsubscribe = auditLog.subscribe((entry) => {
+            try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch { /* client disconnected */ }
+          });
+
+          res.write(`event: stats\ndata: ${JSON.stringify(auditLog.getStats())}\n\n`);
+
+          req.on("close", () => unsubscribe());
+          return;
+        }
+
+        // JSON API: audit log
+        if (url.includes("/agentshield/api/audit")) {
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          const entries = auditLog.getEntries({ limit: 100 });
+          res.end(JSON.stringify(entries));
+          return;
+        }
+
+        // JSON API: stats
+        if (url.includes("/agentshield/api/stats")) {
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.end(JSON.stringify(auditLog.getStats()));
+          return;
+        }
+
+        // Default: HTML dashboard
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.end(getDashboardHtml());
-      },
-    });
-
-    // GET /agentshield/events — SSE stream
-    api.registerHttpRoute({
-      path: "/agentshield/events",
-      handler: (_req, res) => {
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-
-        const unsubscribe = auditLog.subscribe((entry) => {
-          res.write(`data: ${JSON.stringify(entry)}\n\n`);
-        });
-
-        // Send initial stats
-        res.write(`event: stats\ndata: ${JSON.stringify(auditLog.getStats())}\n\n`);
-
-        // Cleanup on disconnect — note: in OpenClaw plugin context,
-        // the gateway handles connection lifecycle
-        // We keep the unsubscribe reference for when the gateway cleans up
-        void unsubscribe;
-      },
-    });
-
-    // GET /agentshield/api/audit — JSON audit log
-    api.registerHttpRoute({
-      path: "/agentshield/api/audit",
-      handler: (req, res) => {
-        res.setHeader("Content-Type", "application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        const entries = auditLog.getEntries({ limit: 100 });
-        res.end(JSON.stringify(entries));
-      },
-    });
-
-    // GET /agentshield/api/stats — JSON stats
-    api.registerHttpRoute({
-      path: "/agentshield/api/stats",
-      handler: (_req, res) => {
-        res.setHeader("Content-Type", "application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.end(JSON.stringify(auditLog.getStats()));
       },
     });
 

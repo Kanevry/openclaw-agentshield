@@ -102,7 +102,10 @@ export interface OpenClawPluginApi {
 
   registerHttpRoute(params: {
     path: string;
-    handler: (req: HttpRequest, res: HttpResponse) => void;
+    handler: (req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) => Promise<boolean | void> | boolean | void;
+    auth: "gateway" | "plugin";
+    match?: "exact" | "prefix";
+    replaceExisting?: boolean;
   }): void;
 }
 
@@ -118,20 +121,8 @@ export interface ToolExecuteResult {
 }
 
 // ── HTTP Types ──────────────────────────────────────────────────────
-
-export interface HttpRequest {
-  method: string;
-  url: string;
-  headers: Record<string, string | string[] | undefined>;
-  query?: Record<string, string>;
-}
-
-export interface HttpResponse {
-  setHeader(name: string, value: string): void;
-  writeHead(statusCode: number, headers?: Record<string, string>): void;
-  write(data: string | Buffer): boolean;
-  end(data?: string | Buffer): void;
-}
+// Plugin HTTP routes use Node.js standard IncomingMessage / ServerResponse
+// imported inline in registerHttpRoute signature above.
 
 // ── Plugin Entry ────────────────────────────────────────────────────
 
