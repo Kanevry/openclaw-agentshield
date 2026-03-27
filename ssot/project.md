@@ -9,9 +9,9 @@ Stand: 27. März 2026.
 | D1 | Welches Projekt? | AgentShield (Option A) mit bedingter MedGuard-Erweiterung bei H12 | 27.03.2026 | User |
 | D2 | Solo oder Team? | Solo, aber mit parallelen Subagents für Dashboard etc. | 27.03.2026 | User |
 | D3 | Mono-Package oder Monorepo? | Single Package | 27.03.2026 | Plan |
-| D4 | Demo-Channel? | Telegram | 27.03.2026 | User |
+| D4 | Demo-Channel? | Discord | 27.03.2026 | User |
 | D5 | Breadth oder Depth? | Breadth (alle 3 Hooks + Dashboard) | 27.03.2026 | Plan |
-| D6 | Hosting? | Bestehender Clank Server (46.224.162.185) | 27.03.2026 | User |
+| D6 | Hosting? | Hackathon Server (188.245.81.195) | 27.03.2026 | User |
 | D7 | Dashboard-Ansatz? | registerHttpRoute() innerhalb OpenClaw (NICHT Control UI Extension) | 27.03.2026 | Recherche |
 | D8 | Agent-Architektur? | Single Agent (Atlas) + Plugin schützt alle | 27.03.2026 | User |
 | D9 | Landing Page? | Next.js App auf Clank Server, Design-first via Pencil | 27.03.2026 | User |

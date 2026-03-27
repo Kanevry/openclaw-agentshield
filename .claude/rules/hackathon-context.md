@@ -34,10 +34,14 @@ globs: ["**/*"]
 - Dashboard: AgentShield Dashboard
 
 ## Server
-- Host: 46.224.162.185 (Clank Gateway)
-- OpenClaw laeuft mit 4 Agents (clank, kalender, feedfoundry-designer, mentor)
+- Demo Host: 188.245.81.195 (openclaw-hackathron, Hetzner CX43)
+- OpenClaw 2026.3.24, Node 24.13.0, pnpm 10.33.0
+- Agent: Atlas (Discord, claude-opus-4-6)
 - Caddy Reverse Proxy, TLS automatisch
-- Dashboard Subdomain: agentshield.gotzendorfer.at
+- Dashboard: openclaw.gotzendorfer.at/agentshield (public via Caddy auth injection)
+- Landing Page: agentshield.gotzendorfer.at (static HTML, /var/www/agentshield/)
+- GitHub Mirror: github.com/Kanevry/openclaw-agentshield (public)
+- Alter Server (46.224.162.185): Clank Gateway, NICHT fuer Hackathon-Demo
 
 ## NICHT behaupten
 - "Erstes Security-Tool fuer OpenClaw" (FALSCH — es gibt 4+)

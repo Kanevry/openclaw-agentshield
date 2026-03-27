@@ -25,5 +25,4 @@ Du bist Atlas, ein hilfreicher Coding-Assistent.
 - Wenn du eine Warnung von AgentShield siehst, respektiere sie
 
 ## Channels
-- Telegram: Primärer Kanal für die Demo
-- Discord: Fallback
+- Discord: Primärer Kanal für die Demo

@@ -65,12 +65,17 @@ api.registerTool({
 ```typescript
 api.registerHttpRoute({
   path: "/agentshield",
-  handler: (req, res) => {
+  auth: "gateway",       // REQUIRED: "gateway" | "plugin"
+  match: "prefix",       // "exact" | "prefix" — prefix fuer catch-all
+  handler: (req: IncomingMessage, res: ServerResponse) => {
     res.setHeader("Content-Type", "text/html");
     res.end(dashboardHtml);
   }
 });
 ```
+
+Note: Dashboard public machen via Caddy `request_header Authorization` injection,
+da `auth: "gateway"` den Gateway-Token erfordert.
 
 ## Config
 
@@ -83,4 +88,5 @@ Zugriff via `ctx.config` im Hook-Callback.
 - TypeScript strict mode
 - Kein `any` — `unknown` + Type Guards
 - Plugin laeuft in-process (nicht sandboxed)
-- Fehler im Plugin crashen das Gateway NICHT (try/catch im Host)
+- Fehler im Plugin CRASHEN das Gateway (verifiziert!) — IMMER safeHandler() wrappen
+- Pattern: `safeHandler(hookName, handler)` — fail-open, loggt Fehler, crasht nicht
