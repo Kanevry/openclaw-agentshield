@@ -1,0 +1,25 @@
+{
+  "name": "openclaw-agentshield",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AI Agent Security Framework — Prompt Injection Defense, Tool Call Guardrails, Real-time Audit",
+  "license": "MIT",
+  "openclaw": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:scanner": "tsx tests/validate-scanner.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}
