@@ -1,0 +1,33 @@
+{
+  "id": "agentshield",
+  "name": "AgentShield",
+  "description": "AI Agent Security Framework — Prompt Injection Defense, Tool Call Guardrails, Real-time Audit",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "strictMode": {
+        "type": "boolean",
+        "default": true,
+        "description": "Block all detected threats (true) or warn only (false)"
+      },
+      "allowedExecPatterns": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": ["git *", "npm *", "pnpm *", "node *", "python *", "tsc *"],
+        "description": "Glob patterns for allowed exec commands"
+      },
+      "blockedDomains": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Domains to block in browser/exec calls"
+      },
+      "dashboard": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable the security dashboard HTTP route"
+      }
+    }
+  }
+}
