@@ -2,7 +2,11 @@
 
 ## Context
 
-24h Hackathon Projekt. Geschwindigkeit zaehlt, aber Code muss funktionieren.
+24h Hackathon Projekt (27-28 Maerz 2026). Geschwindigkeit zaehlt, aber Code muss funktionieren.
+Projekt: **AgentShield** — Real-time Security Monitoring Plugin fuer OpenClaw.
+Demo-Agent: **Atlas** (Telegram).
+Server: 46.224.162.185 (Clank Gateway, OpenClaw laeuft bereits).
+GitLab: root/openclaw-agentshield
 
 ## Stack
 
@@ -56,12 +60,23 @@ export default {
 - Demo-Faehigkeit > Code-Schoenheit
 - README frueh schreiben (klaert das Denken)
 
+## Verifizierte Fakten (IMMER aktuell halten!)
+
+- OpenClaw: **337K+ Stars** (Maerz 2026), Creator: Peter Steinberger (jetzt bei OpenAI)
+- Prompt Injection: offiziell **out of scope** per OpenClaw Security Policy
+- Konkurrenz existiert: ClawSec, OpenClaw Shield, SecureClaw, openclaw-security-monitor
+- Unser Framing: "Real-time aktives Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
+
 ## Referenz-Dateien
 
-- `research/` — Alle Hintergrund-Recherche
-- `options/` — PRDs pro Option
+- `research/` — Alle Hintergrund-Recherche (PRIVAT, nicht public)
+- `research/competition-and-facts.md` — Verifizierte Fakten + Konkurrenz
+- `options/` — PRDs pro Option (PRIVAT)
 - `snippets/` — Copy-paste-ready Code
 - `snippets/openclaw-plugin-template/` — Minimales Plugin Scaffold
+- `docs/ARCHITECTURE.md` — End-to-End Architektur
+- `docs/SOUL-atlas.md` — Demo-Agent Persona
+- `.claude/rules/` — Token-effiziente Kontextrules
 
 ## Reusable Code (aus anderen Projekten)
 
