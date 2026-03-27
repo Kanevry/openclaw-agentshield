@@ -278,14 +278,15 @@ export default {
     );
 
     // ── Dashboard HTTP Routes ───────────────────────────────────────
-    // All routes use auth: "plugin" (no gateway auth required for dashboard)
+    // All routes use auth: "gateway" to bypass Control UI SPA fallback
 
-    // GET /agentshield — HTML dashboard (prefix match for static assets)
+    // GET /agentshield — HTML dashboard (prefix match)
     api.registerHttpRoute({
       path: "/agentshield",
-      auth: "plugin",
+      auth: "gateway",
       match: "prefix",
       handler: (req, res) => {
+        console.log(`[AgentShield] HTTP ${req.method} ${req.url}`);
         const url = req.url ?? "";
 
         // SSE stream
