@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-agentshield",
+  "name": "agentshield",
   "version": "0.1.0",
   "type": "module",
   "description": "AI Agent Security Framework — Prompt Injection Defense, Tool Call Guardrails, Real-time Audit",
