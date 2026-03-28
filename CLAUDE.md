@@ -73,7 +73,7 @@ export default {
 - Prompt Injection: offiziell **out of scope** per OpenClaw Security Policy
 - Konkurrenz existiert: ClawSec, OpenClaw Shield, SecureClaw, openclaw-security-monitor
 - Unser Framing: "OWASP-aligned Real-time Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
-- 4 Hooks, 2 Tools, 4 Routes, 180+ Patterns, 406 Tests, 70 Corpus Cases, 16 Detection Techniques (8 ScanCategory values), 7 PII Patterns, Multilingual (EN+DE), OWASP LLM Prompt Injection Prevention + LLM05 Tool Risk Classification aligned
+- 4 Hooks, 2 Tools, 4 Routes, 180+ Patterns, 408 Tests, 70 Corpus Cases, 16 Detection Techniques (8 ScanCategory values), 7 PII Patterns, Multilingual (EN+DE), OWASP LLM Prompt Injection Prevention + LLM05 Tool Risk Classification aligned
 
 ## Referenz-Dateien
 

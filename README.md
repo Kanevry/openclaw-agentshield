@@ -165,7 +165,7 @@ Base64, hex, and ROT13-encoded variants of all injection patterns are also detec
 pnpm install
 pnpm run typecheck    # TypeScript strict mode
 pnpm run test         # Vitest
-pnpm run test:scanner # Attack corpus validation (406 tests)
+pnpm run test:scanner # Attack corpus validation (408 tests)
 ```
 
 ### Project Structure

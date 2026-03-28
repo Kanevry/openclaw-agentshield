@@ -53,7 +53,7 @@ The demo runs on a Hetzner CX43 server with Caddy as reverse proxy (automatic TL
 
 ## Accomplishments we're proud of
 
-- **406 tests passing** — scanner corpus validation, audit log tests, hook integration tests, typoglycemia detection, hex encoding, HTML exfiltration, rate anomaly detection, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, dashboard HTML + routes. TypeScript strict mode, zero `any` types.
+- **408 tests passing** — scanner corpus validation, audit log tests, hook integration tests, typoglycemia detection, hex encoding, HTML exfiltration, rate anomaly detection, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, dashboard HTML + routes. TypeScript strict mode, zero `any` types.
 
 - **OWASP LLM Prompt Injection Prevention alignment** — we implemented defenses from the OWASP cheat sheet that no other OpenClaw security tool covers: typoglycemia detection (scrambled-letter evasion), hex-encoded payload decoding, HTML exfiltration defense (detecting data theft via `<img>`, `<iframe>`, and HTML event handlers pointing to external domains).
 
@@ -105,7 +105,7 @@ The demo runs on a Hetzner CX43 server with Caddy as reverse proxy (automatic TL
 - Node.js 24
 - pnpm
 - OpenClaw Plugin SDK
-- Vitest (406 tests)
+- Vitest (408 tests)
 - Tailwind CSS (inline, no build step)
 - Server-Sent Events (real-time dashboard)
 - Caddy (reverse proxy, automatic TLS)
