@@ -15,7 +15,7 @@ set -euo pipefail
 
 SERVER="188.245.81.195"
 REMOTE_USER="root"
-GATEWAY_TOKEN="REVOKED_TOKEN"
+GATEWAY_TOKEN="REDACTED_TOKEN"
 GATEWAY_PORT=18789
 
 echo "=== AgentShield Demo Reset ==="

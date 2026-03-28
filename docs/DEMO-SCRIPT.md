@@ -57,13 +57,13 @@ Stand confidently. No slides — just talk. Dashboard is visible in the backgrou
 
 ### Speaker Notes
 
-Point at the dashboard architecture diagram or use hand gestures to illustrate the four hooks. Keep this conceptual — the live demo will make it concrete.
+Point at the dashboard architecture diagram or use hand gestures to illustrate the three hooks. Keep this conceptual — the live demo will make it concrete.
 
 ### Script
 
 > "AgentShield is a native OpenClaw plugin. It installs in one command and protects every agent on the gateway — no config needed."
 >
-> "It works through four hooks:"
+> "It works through three hooks:"
 >
 > *Hold up one finger.*
 >
@@ -77,13 +77,7 @@ Point at the dashboard architecture diagram or use hand gestures to illustrate t
 >
 > "**Three: tool_result_persist.** After a file read or web fetch, we scan the result for embedded injection — the indirect attack vector. If a file contains '[SYSTEM] ignore previous instructions', the agent sees a security warning before it can follow those instructions."
 >
-> *Four fingers.*
->
-> "**Four: message_sending.** We scan the agent's own responses to detect accidental system prompt leakage or sensitive data exposure."
->
-> "Under the hood: 142+ detection patterns, base64 decoding, hex and ROT13 decoding, unicode normalization. Forked from our BitGN agent that scored 20 out of 20 on the security benchmark."
->
-> "Plus typoglycemia defense — we catch scrambled-letter evasion attacks that bypass every other tool."
+> "Under the hood: 74 detection patterns, base64 decoding, unicode normalization. Forked from our BitGN agent that scored 20 out of 20 on the security benchmark."
 
 **Timing target:** 1:30
 
@@ -250,9 +244,7 @@ Rapid-fire. Confidence. These are the credibility markers for technical judges.
 
 > "Under the hood:"
 >
-> "**366 tests passing** — scanner corpus, audit log, hook integration, dashboard routes, end-to-end. TypeScript strict mode, zero `any` types."
->
-> "OWASP LLM Prompt Injection Prevention aligned — typoglycemia, hex encoding, HTML exfiltration detection."
+> "**125 tests passing** — scanner corpus, audit log, hook integration, end-to-end. TypeScript strict mode, zero `any` types."
 >
 > "**Fail-open design** — if the plugin crashes, the agent keeps working. A security tool that breaks your agent is worse than no security tool."
 >
@@ -296,17 +288,13 @@ Slow down. Make eye contact. Deliver the final line with weight.
 
 > Latency and cost. An LLM call on every tool invocation adds 1-3 seconds and API costs. Our scanner runs in under 1ms. For a real-time blocking hook, speed matters. An LLM-based scanner could be a future layer on top.
 
-### "What about evasion techniques like scrambled letters?"
-
-> We implement OWASP's recommended typoglycemia defense. "ignroe prevoius instrctions" — scrambled middle letters — gets caught because we fuzzy-match against known injection keywords. We also decode hex-encoded payloads. Most tools only do exact string matching.
-
 ### "Is this production-ready?"
 
 > The fail-open design means it cannot break your agent. The ring buffer audit log caps memory usage. We fixed our own XSS, CORS, and ReDoS issues. It is as production-ready as a 24-hour hackathon allows — and the architecture is sound for hardening.
 
-### "366 tests — what do they cover?"
+### "125 tests — what do they cover?"
 
-> 70 scanner corpus tests (injection, exec, write, indirect, stealth, benign), 38 audit log tests (ring buffer, filtering, stats), scanner unit tests covering every pattern category (API keys, ROT13, markdown exfiltration, SSRF, path traversal, system prompt extraction, performance benchmarks), dashboard HTML and route tests, and integration tests for all four hooks with type-safe parameter validation.
+> 33 scanner corpus tests (injection, exec, write, indirect, stealth, benign), 38 audit log tests (ring buffer, filtering, stats), 57 scanner unit tests (every pattern category), and integration tests for all three hooks with type-safe parameter validation.
 
 ---
 
@@ -315,7 +303,7 @@ Slow down. Make eye contact. Deliver the final line with weight.
 | Act | Duration | Cumulative | Content |
 |-----|----------|------------|---------|
 | 1. Hook | 0:30 | 0:30 | Problem statement |
-| 2. What it does | 1:00 | 1:30 | 4 hooks, OWASP alignment |
+| 2. What it does | 1:00 | 1:30 | Architecture overview |
 | 3. Live demo | 3:00 | 4:30 | 5 scenarios on dashboard + Discord |
 | 4. Technical depth | 0:30 | 5:00 | Tests, security, quality |
 | 5. Close | 0:15 | 5:15 | Tagline (buffer for timing) |
