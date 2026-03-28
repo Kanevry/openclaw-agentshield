@@ -6,9 +6,9 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 # Security Scanner Patterns
 
 ## Summary (verifiziert 28.03.2026, Session F)
-- **142+ Detection Patterns** (155+ total primitives): 50 injection + 15 exec + 6 write + 22 sensitive data + 7 PII + 11 base64/hex/rot13 keywords + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 3 HTML exfil + TOOL_RISK_MAP
+- **165+ Detection Patterns** (178+ total primitives): 68 injection (50 EN + 18 DE) + 15 exec + 6 write + 22 sensitive data + 7 PII + 15 base64/hex/rot13 keywords (11 EN + 4 DE) + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 4 HTML exfil (incl. comment injection) + TOOL_RISK_MAP
 - **16 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
-- **367 Tests** (5 test files), **70 Attack Corpus Cases**
+- **391 Tests** (5 test files), **70 Attack Corpus Cases**
 - **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
@@ -18,13 +18,14 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 
 ## Detection Categories
 
-### 1. Prompt Injection (scanForInjection)
+### 1. Prompt Injection (scanForInjection) — 68 patterns (50 EN + 18 DE)
 - Instruction Override: "ignore previous instructions", "disregard", "new instructions:"
 - Identity Manipulation: "you are now", "act as", "pretend to be"
 - Credential Extraction: "forward secrets", "exfiltrate", "send me your api key"
 - Markup Injection: [SYSTEM], [ADMIN], [INST], <|im_start|>, ### Human:
 - Base64 Variants: decode and scan (16+ char segments)
 - Unicode Obfuscation: zero-width chars, homoglyphs
+- **German (DE)**: "ignoriere vorherige anweisungen", "vergiss deine anweisungen", "du hast jetzt admin", "admin-rechte", "was ist dein systemprompt", "enthülle deine anweisungen", "entwicklermodus", "befolge keine anweisungen", "behandle als daten", etc.
 
 ### 2. Tool Call Abuse (scanExecCommand)
 - Data Exfiltration: curl/wget to non-localhost, pipe to nc/curl
@@ -76,10 +77,11 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - Decodes to UTF-8, validates printability, scans against OBFUSCATION_KEYWORDS
 - Complements existing base64 detection
 
-### 8. HTML Exfiltration Detection (scanForHtmlExfiltration)
+### 8. HTML Exfiltration Detection (scanForHtmlExfiltration) — 4 patterns
 - <img> with external src (excludes localhost/127.0.0.1)
 - HTML event handlers (onerror, onload, etc.) on img/svg/iframe/video/audio/embed/object
 - <iframe> with external src
+- **HTML comment injection**: `<!-- SYSTEM: ... -->` with suspicious keywords (system, admin, instruction, ignore, reveal, execute, exfiltrate, prompt, anweisung)
 - OWASP-listed attack vector
 
 ### 9. Rate Anomaly Detection

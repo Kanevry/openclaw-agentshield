@@ -26,14 +26,14 @@ globs: ["docs/**", "README.md", "CLAUDE.md", "submission/**", "landing/**", "sso
 - Real-time Dashboard mit SSE Live Events (keiner hat das)
 - 4 Hooks, 2 Tools, 4 Routes: aktives Blocking + Output Monitoring, nicht nur Logging
 - OWASP LLM Prompt Injection Prevention aligned
-- 142+ Detection Patterns (155+ total primitives): Base64 + Hex + Unicode + Typoglycemia + HTML Exfiltration + System Prompt Extraction + ROT13 + Markdown Exfil + SSRF + Path Traversal + 22 API Key Patterns + 7 PII Patterns + OWASP LLM05 Tool Risk Classification
+- 165+ Detection Patterns (178+ total primitives): Base64 + Hex + Unicode + Typoglycemia + HTML Exfiltration + HTML Comment Injection + System Prompt Extraction + ROT13 + Markdown Exfil + SSRF + Path Traversal + 22 API Key Patterns + 7 PII Patterns + Multilingual (EN+DE) + OWASP LLM05 Tool Risk Classification
 - 16 Detection Techniques (conceptual), 9 ScanCategory values in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
 - Rate Anomaly Detection (sliding window counter)
 - Centralized calcSeverity() across all scan functions
 - Configurable outbound blocking (blockOutbound config)
 - CSP + 3 Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
 - Dashboard error isolation: try/catch wrapper around all HTTP route handlers
-- 367 Tests (5 test files), 70 Attack Corpus Cases
+- 391 Tests (5 test files), 70 Attack Corpus Cases
 
 ## Naming
 - Plugin: AgentShield
