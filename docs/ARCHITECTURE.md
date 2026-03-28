@@ -18,9 +18,9 @@
 │  │  │ message_   │ │ before_   │ │ tool_    │ │ message_ ││    │
 │  │  │ received   │ │ tool_call │ │ result_  │ │ sending  ││    │
 │  │  │            │ │           │ │ persist  │ │          ││    │
-│  │  │ Scan       │ │ Analyze+  │ │ Scan     │ │ Rate     ││    │
-│  │  │ inbound    │ │ Block     │ │ results  │ │ Anomaly  ││    │
-│  │  │ messages   │ │ tool calls│ │          │ │ Check    ││    │
+│  │  │ Scan       │ │ Analyze+  │ │ Scan     │ │ Output   ││    │
+│  │  │ inbound    │ │ Block +   │ │ results  │ │ Monitor  ││    │
+│  │  │ messages   │ │ Rate Limit│ │          │ │ (leaks)  ││    │
 │  │  └─────┬──────┘ └─────┬─────┘ └────┬─────┘ └────┬────┘│    │
 │  │        │              │             │             │      │    │
 │  │  ┌─────┴──────────────┴─────────────┴─────────────┴───┐ │    │
@@ -170,8 +170,8 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
   - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
   - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
   - Write Content Abuse (eval, exec, child_process, script tags)
-  - HTML Exfiltration (Markdown Image Exfil, Hidden iframes, Meta Refresh Redirects)
-  - Typoglycemia Detection (visuelle Aehnlichkeit fuer Homoglyph-Attacken)
+  - HTML Exfiltration (External img/iframe src, HTML event handlers on media/embed tags)
+  - Typoglycemia Detection (scrambled middle letters, OWASP-recommended)
   - Hex-encoded Injection Payloads
 - **Rate Anomaly Detection:** Erkennung ungewoehnlicher Tool-Call-Frequenzen pro Agent
 - **Base64 Decode + Unicode Normalize** als Pre-Processing

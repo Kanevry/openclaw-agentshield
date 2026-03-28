@@ -10,7 +10,7 @@ globs: ["**/*"]
 - 3 Tracks: AI Agents, Cybersecurity, Bio & Healthcare
 - Prize Pool: EUR 4.150+, Grand Prize: SF Residency
 
-## Verified Facts (Stand: 27. Maerz 2026)
+## Verified Facts (Stand: 28. Maerz 2026)
 - OpenClaw: 337K+ GitHub Stars (NICHT 247K — das war Anfang Maerz)
 - Creator: Peter Steinberger (PSPDFKit) — jetzt bei OpenAI (seit Feb 2026)
 - Prompt Injection: offiziell "out of scope" per OpenClaw Security Policy
@@ -24,9 +24,11 @@ globs: ["**/*"]
 
 ## Unsere Differenzierung
 - Real-time Dashboard mit SSE Live Events (keiner hat das)
-- Hook-basiert: aktives Blocking (before_tool_call), nicht nur Logging
-- Base64 + Unicode Obfuscation Detection
-- Battle-tested Scanner aus BitGN (20/20 Score)
+- 4 Hooks: aktives Blocking + Output Monitoring, nicht nur Logging
+- OWASP LLM Prompt Injection Prevention aligned
+- 100+ Detection Patterns: Base64 + Hex + Unicode + Typoglycemia + HTML Exfiltration
+- Rate Anomaly Detection (sliding window counter)
+- 159 Tests, 38 Attack Corpus Cases
 
 ## Naming
 - Plugin: AgentShield

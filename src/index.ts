@@ -6,8 +6,9 @@
  *
  * Hooks:
  *   - message_received: Scan inbound messages for injection
- *   - before_tool_call: Context-aware tool call guarding
+ *   - before_tool_call: Context-aware tool call guarding + rate anomaly detection
  *   - tool_result_persist: Scan tool results for indirect injection
+ *   - message_sending: Output monitoring for sensitive data leakage
  *
  * Tools:
  *   - shield_scan: Manual security scan
@@ -65,6 +66,7 @@ function asScanContext(val: unknown): ScanContext | undefined {
 
 const TRUNCATE_LENGTH = 100;
 const SSE_HEARTBEAT_MS = 15_000;
+const DEFAULT_RATE_LIMIT = 30;
 
 // ── Outcome Helper ──────────────────────────────────────────────────
 
@@ -145,7 +147,7 @@ export default {
           const config = ctx.config;
 
           // Rate anomaly check (before any scanning — cheap early exit)
-          const rate = checkRateAnomaly(toolCallTimestamps, config.rateLimit ?? 30);
+          const rate = checkRateAnomaly(toolCallTimestamps, config.rateLimit ?? DEFAULT_RATE_LIMIT);
           if (rate.exceeded) {
             auditLog.add({
               hook: "before_tool_call",
@@ -154,13 +156,13 @@ export default {
               category: "rate-anomaly",
               patterns: ["rate-limit-exceeded"],
               outcome: getOutcome(true, "before_tool_call", config.strictMode),
-              details: `Rate anomaly: ${rate.callsInWindow} calls/min (threshold: ${config.rateLimit ?? 30})`,
+              details: `Rate anomaly: ${rate.callsInWindow} calls/min (threshold: ${config.rateLimit ?? DEFAULT_RATE_LIMIT})`,
             });
 
             if (config.strictMode) {
               return {
                 block: true,
-                blockReason: `AgentShield: Rate limit exceeded — ${rate.callsInWindow} tool calls in 60s (max ${config.rateLimit ?? 30})`,
+                blockReason: `AgentShield: Rate limit exceeded — ${rate.callsInWindow} tool calls in 60s (max ${config.rateLimit ?? DEFAULT_RATE_LIMIT})`,
               };
             }
           }
@@ -618,7 +620,8 @@ function getDashboardHtml(): string {
     // SSE Connection
     const es = new EventSource('/agentshield/events');
     es.onmessage = (e) => {
-      const entry = JSON.parse(e.data);
+      let entry;
+      try { entry = JSON.parse(e.data); } catch { return; }
       addEvent(entry);
       // Cap DOM events
       while (eventsEl.children.length > MAX_DOM_EVENTS) {
@@ -629,7 +632,7 @@ function getDashboardHtml(): string {
         document.getElementById('uptime').textContent = 'Stats fetch failed';
       });
     };
-    es.addEventListener('stats', (e) => updateStats(JSON.parse(e.data)));
+    es.addEventListener('stats', (e) => { try { updateStats(JSON.parse(e.data)); } catch { /* malformed stats */ } });
     es.onopen = () => {
       document.getElementById('status-dot').className = 'w-3 h-3 bg-green-500 rounded-full pulse-dot';
       document.getElementById('uptime').textContent = 'Connected';

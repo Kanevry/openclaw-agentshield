@@ -46,6 +46,11 @@ export default {
       // Eingehende Nachrichten scannen
     });
 
+    api.on("message_sending", (event, ctx) => {
+      // event: { message: AgentMessage }
+      // return: { cancel?: boolean } | void
+    });
+
     // Tools registrieren
     api.registerTool(toolDefinition, { optional: true });
 
@@ -66,7 +71,8 @@ export default {
 - OpenClaw: **337K+ Stars** (Maerz 2026), Creator: Peter Steinberger (jetzt bei OpenAI)
 - Prompt Injection: offiziell **out of scope** per OpenClaw Security Policy
 - Konkurrenz existiert: ClawSec, OpenClaw Shield, SecureClaw, openclaw-security-monitor
-- Unser Framing: "Real-time aktives Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
+- Unser Framing: "OWASP-aligned Real-time Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
+- 4 Hooks, 100+ Patterns, 159 Tests, OWASP LLM Prompt Injection Prevention aligned
 
 ## Referenz-Dateien
 
@@ -83,6 +89,6 @@ export default {
 
 | Snippet | Herkunft | Zweck |
 |---------|----------|-------|
-| `snippets/security-scanner.ts` | BitGN-Hackathron | 16+ Injection Patterns, base64 Decoding |
+| `snippets/security-scanner.ts` | BitGN-Hackathron | Original Scanner (evolved to 100+ patterns in src/lib/scanner.ts) |
 | `snippets/retry.ts` | BitGN-Hackathron | Exponential Backoff mit Jitter |
 | `snippets/circuit-breaker.ts` | Clank Event Bus | Circuit Breaker (stripped) |
