@@ -1,31 +1,44 @@
 # Unser Server — Verifizierte Infrastruktur
 
-Stand: 27. März 2026. Verifiziert via SSH.
+Stand: 28. März 2026. Verifiziert via SSH.
 
 ## Server-Hardware
 
 | Parameter | Wert | Verifiziert via |
 |-----------|------|-----------------|
-| IP | 46.224.162.185 | ssh clank@46.224.162.185 |
+| IP | 188.245.81.195 | ssh root@188.245.81.195 |
+| Hostname | openclaw-hackathron | Hetzner CX43 |
 | Provider | Hetzner | Bekannt |
 | OS | Ubuntu 24.04.4 LTS | `cat /etc/os-release` |
 | RAM | 15.613 MB (6.393 MB frei) | `free -m` |
 | Disk | 150 GB (119 GB frei, 18% belegt) | `df -h /` |
-| Node.js | v22.22.1 | `node --version` |
+| Node.js | v24.13.0 | `node --version` |
 
 ## OpenClaw Installation
 
 | Parameter | Wert | Verifiziert via |
 |-----------|------|-----------------|
-| Version | **2026.3.13** (61d171a) | `openclaw --version` |
+| Version | **2026.3.24** | `openclaw --version` |
 | Binary | /usr/bin/openclaw | `which openclaw` |
 | Gateway Port | 18789 (WebSocket, Loopback) | config/openclaw.json |
-| Agents | 4 (clank, kalender, feedfoundry-designer, mentor) | config/openclaw.json |
-| Messaging | Discord (8 Guilds), Telegram (Allowlist) | config/openclaw.json |
-| Skills | 16+ aktiv | config/openclaw.json |
-| Plugins | discord, telegram, llm-task | config/openclaw.json |
+| Agents | Atlas (Discord, claude-opus-4-6) | config/openclaw.json |
+| Messaging | Discord | config/openclaw.json |
+| Plugin Path | /opt/openclaw-agentshield | git clone + git pull |
+| Plugins | discord, agentshield | config/openclaw.json |
+| Gateway | Laeuft als Prozess (nicht systemd) | — |
 
-## Laufende Services (auf dem Server)
+## Laufende Services (auf dem Hackathon-Server 188.245.81.195)
+
+| Service | Port | Caddy Domain |
+|---------|------|-------------|
+| OpenClaw Gateway | 18789 | (loopback only) |
+| AgentShield Dashboard | (via Gateway) | openclaw.gotzendorfer.at/agentshield |
+| Caddy Reverse Proxy | 443 | TLS automatisch |
+
+## Alter Server (46.224.162.185) — Clank Gateway
+
+> **NICHT der Hackathon-Demo-Server.** Das ist der bestehende Clank Gateway Server
+> mit den produktiven Agents (clank, kalender, feedfoundry-designer, mentor).
 
 | Service | Port | Caddy Domain |
 |---------|------|-------------|
@@ -40,16 +53,26 @@ Stand: 27. März 2026. Verifiziert via SSH.
 
 | Subdomain | Typ | Ziel | Angelegt |
 |-----------|-----|------|----------|
-| agentshield.gotzendorfer.at | A | 46.224.162.185 | 27.03.2026 |
-| events.gotzendorfer.at | A | 46.224.162.185 | bestehend |
-| feedfoundry.gotzendorfer.at | A | 46.224.162.185 | bestehend |
-| gitlab.gotzendorfer.at | A | 46.224.162.185 | bestehend |
+| agentshield.gotzendorfer.at | A | 188.245.81.195 | 28.03.2026 |
+| openclaw.gotzendorfer.at | A | 188.245.81.195 | 28.03.2026 |
+| events.gotzendorfer.at | A | 46.224.162.185 | bestehend (alter Server) |
+| feedfoundry.gotzendorfer.at | A | 46.224.162.185 | bestehend (alter Server) |
+| gitlab.gotzendorfer.at | A | 46.224.162.185 | bestehend (alter Server) |
 
-## Wichtige Konfigurationsdateien
+## Wichtige Konfigurationsdateien (Hackathon-Server)
 
-| Datei | Pfad (Server) | Pfad (Lokal/Git) |
-|-------|---------------|-------------------|
-| OpenClaw Config | /home/clank/clank/config/openclaw.json | clank/config/openclaw.json |
-| Caddyfile | /etc/caddy/Caddyfile (oder Docker) | clank/config/Caddyfile |
-| Clank SOUL.md | /home/clank/clank/workspace/SOUL.md | clank/workspace/SOUL.md |
-| Kalender SOUL.md | /home/clank/clank/workspace/kalender/SOUL.md | clank/workspace/kalender/SOUL.md |
+| Datei | Pfad (Server) |
+|-------|---------------|
+| AgentShield Plugin | /opt/openclaw-agentshield |
+| OpenClaw Config | (TBD) |
+| Caddyfile | /etc/caddy/Caddyfile |
+| Atlas SOUL.md | (im OpenClaw workspace) |
+
+## Deployment
+
+| Parameter | Wert |
+|-----------|------|
+| Methode | `git clone` + `git pull` (NICHT rsync) |
+| Plugin Pfad | /opt/openclaw-agentshield |
+| GitHub Mirror | github.com/Kanevry/openclaw-agentshield |
+| GitLab | root/openclaw-agentshield (auf 46.224.162.185) |

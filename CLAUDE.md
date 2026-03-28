@@ -5,7 +5,8 @@
 24h Hackathon Projekt (27-28 Maerz 2026). Geschwindigkeit zaehlt, aber Code muss funktionieren.
 Projekt: **AgentShield** — Real-time Security Monitoring Plugin fuer OpenClaw.
 Demo-Agent: **Atlas** (Discord).
-Server: 46.224.162.185 (Clank Gateway, OpenClaw laeuft bereits).
+Server: 188.245.81.195 (openclaw-hackathron, Hetzner CX43).
+Alter Server: 46.224.162.185 (Clank Gateway, NICHT fuer Hackathon-Demo).
 GitLab: root/openclaw-agentshield
 
 ## Stack

@@ -13,6 +13,8 @@
 
 import type { Severity, ScanResult } from "./scanner.types.js";
 
+export const MAX_SCAN_LENGTH = 1_000_000; // 1MB — reject oversized inputs to prevent DoS
+
 // ── Prompt Injection Patterns ────────────────────────────────────────
 
 const INJECTION_PATTERNS: readonly string[] = [
@@ -76,13 +78,13 @@ const HIGH_SEVERITY_PATTERNS: readonly string[] = [
 // ── Tool Abuse Patterns ──────────────────────────────────────────────
 
 const EXEC_DANGER_PATTERNS: readonly RegExp[] = [
-  /\bcurl\s+.*https?:\/\/(?!localhost|127\.0\.0\.1)/i,
-  /\bwget\s+.*https?:\/\//i,
+  /\bcurl\s+[^\n]*?https?:\/\/(?!localhost|127\.0\.0\.1)\S/i,
+  /\bwget\s+[^\n]*?https?:\/\/\S/i,
   /\brm\s+-[rf]{1,2}\s+\//i,
   /\brm\s+-[rf]{1,2}\s+~\//i,
   /\bchmod\s+777\b/i,
   /\bchmod\s+\+[sx]\b/i,
-  /\beval\b.*\$/i,
+  /\beval\b[^\n]*\$/i,
   /\benv\b|\bprintenv\b/i,
   /\becho\s+\$[A-Z_]+/i,
   /\|\s*nc\s+/i,
@@ -179,6 +181,9 @@ const SENSITIVE_DATA_PATTERNS: readonly { name: string; pattern: RegExp }[] = [
  * Checks plaintext + base64-encoded variants + Unicode normalization.
  */
 export function scanForInjection(text: string): ScanResult {
+  if (text.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
   const normalized = normalizeText(text);
   const lower = normalized.toLowerCase();
   const matched: string[] = [];
@@ -221,6 +226,10 @@ export function scanExecCommand(
     return { detected: false, patterns: [], severity: "none", category: "none" };
   }
 
+  if (command.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
+
   const matched: string[] = [];
 
   for (const pattern of EXEC_DANGER_PATTERNS) {
@@ -245,6 +254,9 @@ export function scanExecCommand(
  * Scan file content being written for dangerous patterns.
  */
 export function scanWriteContent(content: string): ScanResult {
+  if (content.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
   const matched: string[] = [];
 
   for (const pattern of WRITE_DANGER_PATTERNS) {
@@ -274,6 +286,9 @@ export function scanWriteContent(content: string): ScanResult {
  * Detect sensitive data patterns in text (API keys, tokens, private keys).
  */
 export function scanForSensitiveData(text: string): ScanResult {
+  if (text.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
   const matched: string[] = [];
 
   for (const { name, pattern } of SENSITIVE_DATA_PATTERNS) {
@@ -316,13 +331,17 @@ export function isBlockedUrl(
 
 // ── Allowed Exec Pattern Matching ────────────────────────────────────
 
+function escapeRegExp(str: string): string {
+  return str.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+}
+
 function isAllowedExec(command: string, patterns: string[]): boolean {
   const trimmed = command.trim();
   return patterns.some((pattern) => {
-    const regex = new RegExp(
-      "^" + pattern.replace(/\*/g, ".*").replace(/\?/g, ".") + "$",
-    );
-    return regex.test(trimmed);
+    const escaped = escapeRegExp(pattern)
+      .replace(/\\\*/g, ".*")
+      .replace(/\\\?/g, ".");
+    return new RegExp("^" + escaped + "$").test(trimmed);
   });
 }
 

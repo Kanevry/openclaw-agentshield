@@ -29,9 +29,54 @@ import type {
   ToolResultPersistResult,
   PluginContext,
 } from "./types/openclaw.js";
-import { scanForInjection, scanExecCommand, scanWriteContent, fullScan } from "./lib/scanner.js";
+import { scanForInjection, scanExecCommand, scanWriteContent, scanForSensitiveData, isBlockedUrl, fullScan } from "./lib/scanner.js";
 import { AuditLog } from "./lib/audit-log.js";
 import { safeHandler } from "./hooks/safe-handler.js";
+
+// ── Type Guards ──────────────────────────────────────────────────────
+
+function asString(val: unknown, fallback = ""): string {
+  return typeof val === "string" ? val : fallback;
+}
+
+function asNumber(val: unknown, fallback: number): number {
+  return typeof val === "number" && Number.isFinite(val) ? val : fallback;
+}
+
+const VALID_SEVERITIES = ["low", "medium", "high", "critical"] as const;
+type FilterSeverity = (typeof VALID_SEVERITIES)[number];
+
+function asSeverity(val: unknown): FilterSeverity | undefined {
+  return typeof val === "string" && VALID_SEVERITIES.includes(val as FilterSeverity)
+    ? (val as FilterSeverity)
+    : undefined;
+}
+
+const VALID_CONTEXTS = ["exec", "write", "read", "message", "general"] as const;
+type ScanContext = (typeof VALID_CONTEXTS)[number];
+
+function asScanContext(val: unknown): ScanContext | undefined {
+  return typeof val === "string" && VALID_CONTEXTS.includes(val as ScanContext)
+    ? (val as ScanContext)
+    : undefined;
+}
+
+// ── Constants ────────────────────────────────────────────────────────
+
+const TRUNCATE_LENGTH = 100;
+const SSE_HEARTBEAT_MS = 15_000;
+
+// ── Outcome Helper ──────────────────────────────────────────────────
+
+function getOutcome(
+  detected: boolean,
+  hook: "message_received" | "before_tool_call" | "tool_result_persist" | "manual",
+  strictMode?: boolean,
+): "blocked" | "warned" | "allowed" {
+  if (!detected) return "allowed";
+  if (hook === "before_tool_call" && strictMode) return "blocked";
+  return "warned";
+}
 
 // ── Shared State ─────────────────────────────────────────────────────
 
@@ -57,7 +102,7 @@ export default {
             severity: result.severity,
             category: result.category,
             patterns: result.patterns,
-            outcome: result.detected ? "warned" : "allowed",
+            outcome: getOutcome(result.detected, "message_received"),
             details: result.detected
               ? `Injection detected in user message: ${result.patterns.join(", ")}`
               : "Clean message",
@@ -84,7 +129,7 @@ export default {
 
           // Exec command scanning
           if (toolName === "exec" || toolName === "shell" || toolName === "bash") {
-            const command = (params.command ?? params.cmd ?? "") as string;
+            const command = asString(params.command ?? params.cmd);
             const result = scanExecCommand(command, config.allowedExecPatterns);
 
             auditLog.add({
@@ -93,10 +138,10 @@ export default {
               severity: result.severity,
               category: result.category,
               patterns: result.patterns,
-              outcome: result.detected && config.strictMode ? "blocked" : result.detected ? "warned" : "allowed",
+              outcome: getOutcome(result.detected, "before_tool_call", config.strictMode),
               details: result.detected
-                ? `Dangerous exec: ${command.slice(0, 100)}`
-                : `Allowed exec: ${command.slice(0, 100)}`,
+                ? `Dangerous exec: ${command.slice(0, TRUNCATE_LENGTH)}`
+                : `Allowed exec: ${command.slice(0, TRUNCATE_LENGTH)}`,
             });
 
             if (result.detected && config.strictMode) {
@@ -109,7 +154,7 @@ export default {
 
           // Write content scanning
           if (toolName === "write" || toolName === "edit") {
-            const content = (params.content ?? params.text ?? "") as string;
+            const content = asString(params.content ?? params.text);
             const result = scanWriteContent(content);
 
             auditLog.add({
@@ -118,7 +163,7 @@ export default {
               severity: result.severity,
               category: result.category,
               patterns: result.patterns,
-              outcome: result.detected && config.strictMode ? "blocked" : result.detected ? "warned" : "allowed",
+              outcome: getOutcome(result.detected, "before_tool_call", config.strictMode),
               details: result.detected
                 ? `Dangerous write content: ${result.patterns.join(", ")}`
                 : "Clean write",
@@ -132,19 +177,27 @@ export default {
             }
           }
 
-          // URL/browser scanning
+          // URL/browser scanning — domain blocklist
           if (toolName === "browser" || toolName === "web_fetch") {
-            const url = (params.url ?? "") as string;
-            // URL scanning handled by domain blocklist — extend later
+            const url = asString(params.url);
+            const blocked = isBlockedUrl(url, config.blockedDomains);
+
             auditLog.add({
               hook: "before_tool_call",
               toolName,
-              severity: "none",
-              category: "none",
-              patterns: [],
-              outcome: "allowed",
-              details: `Browser/fetch: ${url.slice(0, 100)}`,
+              severity: blocked ? "high" : "none",
+              category: blocked ? "exfiltration" : "none",
+              patterns: blocked ? ["blocked-domain"] : [],
+              outcome: getOutcome(blocked, "before_tool_call", config.strictMode),
+              details: `Browser/fetch: ${url.slice(0, TRUNCATE_LENGTH)}`,
             });
+
+            if (blocked && config.strictMode) {
+              return {
+                block: true,
+                blockReason: `AgentShield: Blocked domain in URL — ${url.slice(0, TRUNCATE_LENGTH)}`,
+              };
+            }
           }
 
           return undefined; // allow
@@ -159,19 +212,36 @@ export default {
         "tool_result_persist",
         (event: ToolResultPersistEvent, _ctx: PluginContext): ToolResultPersistResult | undefined => {
           const { message, toolName } = event;
-          const result = scanForInjection(message.content);
+          const injectionResult = scanForInjection(message.content);
+          const sensitiveResult = scanForSensitiveData(message.content);
 
+          // Log injection scan
           auditLog.add({
             hook: "tool_result_persist",
             toolName,
-            severity: result.severity,
-            category: result.category,
-            patterns: result.patterns,
-            outcome: result.detected ? "warned" : "allowed",
-            details: result.detected
-              ? `Indirect injection in ${toolName ?? "unknown"} result: ${result.patterns.join(", ")}`
+            severity: injectionResult.severity,
+            category: injectionResult.category,
+            patterns: injectionResult.patterns,
+            outcome: getOutcome(injectionResult.detected, "tool_result_persist"),
+            details: injectionResult.detected
+              ? `Indirect injection in ${toolName ?? "unknown"} result: ${injectionResult.patterns.join(", ")}`
               : `Clean result from ${toolName ?? "unknown"}`,
           });
+
+          // Log sensitive data scan separately if detected
+          if (sensitiveResult.detected) {
+            auditLog.add({
+              hook: "tool_result_persist",
+              toolName,
+              severity: sensitiveResult.severity,
+              category: sensitiveResult.category,
+              patterns: sensitiveResult.patterns,
+              outcome: "warned",
+              details: `Sensitive data in ${toolName ?? "unknown"} result: ${sensitiveResult.patterns.join(", ")}`,
+            });
+          }
+
+          const result = injectionResult.detected ? injectionResult : sensitiveResult;
 
           if (result.detected) {
             return {
@@ -209,8 +279,8 @@ export default {
           required: ["text"],
         },
         async execute(_id: string, params: Record<string, unknown>) {
-          const text = params.text as string;
-          const context = params.context as "exec" | "write" | "read" | "message" | "general" | undefined;
+          const text = asString(params.text);
+          const context = asScanContext(params.context);
           const result = fullScan(text, context ? { type: context } : undefined);
 
           auditLog.add({
@@ -218,7 +288,7 @@ export default {
             severity: result.severity,
             category: result.category,
             patterns: result.patterns,
-            outcome: result.detected ? "warned" : "allowed",
+            outcome: getOutcome(result.detected, "manual"),
             details: `Manual scan (${context ?? "general"})`,
           });
 
@@ -254,11 +324,11 @@ export default {
           },
         },
         async execute(_id: string, params: Record<string, unknown>) {
-          const limit = (params.limit as number | undefined) ?? 20;
-          const severity = params.severity as string | undefined;
+          const limit = asNumber(params.limit, 20);
+          const severity = asSeverity(params.severity);
           const entries = auditLog.getEntries({
             limit,
-            severity: severity as "low" | "medium" | "high" | "critical" | undefined,
+            severity,
           });
 
           const stats = auditLog.getStats();
@@ -294,22 +364,28 @@ export default {
           res.setHeader("Content-Type", "text/event-stream");
           res.setHeader("Cache-Control", "no-cache");
           res.setHeader("Connection", "keep-alive");
-          res.setHeader("Access-Control-Allow-Origin", "*");
 
           const unsubscribe = auditLog.subscribe((entry) => {
             try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch { /* client disconnected */ }
           });
 
+          // Heartbeat to keep connection alive through proxies
+          const heartbeat = setInterval(() => {
+            try { res.write(`: heartbeat\n\n`); } catch { clearInterval(heartbeat); }
+          }, SSE_HEARTBEAT_MS);
+
           res.write(`event: stats\ndata: ${JSON.stringify(auditLog.getStats())}\n\n`);
 
-          req.on("close", () => unsubscribe());
+          req.on("close", () => {
+            clearInterval(heartbeat);
+            unsubscribe();
+          });
           return;
         }
 
         // JSON API: audit log
         if (url.includes("/agentshield/api/audit")) {
           res.setHeader("Content-Type", "application/json");
-          res.setHeader("Access-Control-Allow-Origin", "*");
           const entries = auditLog.getEntries({ limit: 100 });
           res.end(JSON.stringify(entries));
           return;
@@ -318,7 +394,6 @@ export default {
         // JSON API: stats
         if (url.includes("/agentshield/api/stats")) {
           res.setHeader("Content-Type", "application/json");
-          res.setHeader("Access-Control-Allow-Origin", "*");
           res.end(JSON.stringify(auditLog.getStats()));
           return;
         }
@@ -421,21 +496,55 @@ function getDashboardHtml(): string {
 
       const div = document.createElement('div');
       div.className = 'px-4 py-3 flex items-start gap-3 hover:bg-gray-800/50 transition-colors';
-      div.innerHTML =
-        '<span class="text-lg">' + icon + '</span>' +
-        '<div class="flex-1 min-w-0">' +
-          '<div class="flex items-center gap-2">' +
-            '<span class="text-xs font-mono text-gray-500">' + time + '</span>' +
-            '<span class="text-xs px-1.5 py-0.5 rounded font-mono ' + colors + '">' +
-              entry.severity.toUpperCase() + '</span>' +
-            '<span class="text-xs text-gray-500">' + entry.hook + '</span>' +
-            (entry.toolName ? '<span class="text-xs text-gray-600">(' + entry.toolName + ')</span>' : '') +
-          '</div>' +
-          '<div class="text-sm text-gray-300 mt-1 truncate">' + entry.details + '</div>' +
-          (entry.patterns.length > 0
-            ? '<div class="text-xs text-gray-500 mt-1 font-mono truncate">' + entry.patterns.join(', ') + '</div>'
-            : '') +
-        '</div>';
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'text-lg';
+      iconSpan.textContent = icon;
+      div.appendChild(iconSpan);
+
+      const info = document.createElement('div');
+      info.className = 'flex-1 min-w-0';
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'text-xs font-mono text-gray-500';
+      timeSpan.textContent = time;
+      row.appendChild(timeSpan);
+
+      const sevSpan = document.createElement('span');
+      sevSpan.className = 'text-xs px-1.5 py-0.5 rounded font-mono ' + colors;
+      sevSpan.textContent = entry.severity.toUpperCase();
+      row.appendChild(sevSpan);
+
+      const hookSpan = document.createElement('span');
+      hookSpan.className = 'text-xs text-gray-500';
+      hookSpan.textContent = entry.hook;
+      row.appendChild(hookSpan);
+
+      if (entry.toolName) {
+        const toolSpan = document.createElement('span');
+        toolSpan.className = 'text-xs text-gray-600';
+        toolSpan.textContent = '(' + entry.toolName + ')';
+        row.appendChild(toolSpan);
+      }
+
+      info.appendChild(row);
+
+      const detailsDiv = document.createElement('div');
+      detailsDiv.className = 'text-sm text-gray-300 mt-1 truncate';
+      detailsDiv.textContent = entry.details;
+      info.appendChild(detailsDiv);
+
+      if (entry.patterns.length > 0) {
+        const patternsDiv = document.createElement('div');
+        patternsDiv.className = 'text-xs text-gray-500 mt-1 font-mono truncate';
+        patternsDiv.textContent = entry.patterns.join(', ');
+        info.appendChild(patternsDiv);
+      }
+
+      div.appendChild(info);
 
       eventsEl.insertBefore(div, eventsEl.firstChild);
     }

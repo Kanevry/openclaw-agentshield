@@ -14,9 +14,8 @@ import type { AuditEntry, AuditStats, Severity, ScanCategory } from "./scanner.t
 
 type AuditListener = (entry: AuditEntry) => void;
 
-let nextId = 1;
-
 export class AuditLog {
+  private nextId = 1;
   private readonly entries: AuditEntry[] = [];
   private readonly maxEntries: number;
   private readonly listeners = new Set<AuditListener>();
@@ -28,7 +27,7 @@ export class AuditLog {
   add(entry: Omit<AuditEntry, "id" | "timestamp">): AuditEntry {
     const full: AuditEntry = {
       ...entry,
-      id: String(nextId++),
+      id: String(this.nextId++),
       timestamp: new Date().toISOString(),
     };
 

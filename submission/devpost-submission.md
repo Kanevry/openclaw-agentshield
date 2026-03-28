@@ -31,7 +31,7 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 - **TypeScript** (ESM, strict mode) on **Node 24+**
 - **OpenClaw Plugin SDK** — hooks (api.on), tools (api.registerTool), HTTP routes (api.registerHttpRoute)
-- **Security scanner** with 20+ patterns, forked from our battle-tested BitGN agent (20/20 security benchmark)
+- **Security scanner** with 74 patterns (37 injection, 15 exec, 6 write, 5 sensitive data, 11 base64), forked from our battle-tested BitGN agent (20/20 security benchmark)
 - **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming
 - **Fail-open error handling** — plugin errors never crash the gateway
 - **Ring buffer audit log** (1000 entries) with severity filtering
@@ -45,10 +45,12 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 ## Accomplishments that we're proud of
 
-- **33/33 security tests passing** — comprehensive attack corpus covering injection, exec, write, indirect, stealth, and benign scenarios
+- **125 tests passing** (33 scanner corpus + 38 audit-log + 57 scanner + 30 hooks) — comprehensive coverage across injection, exec, write, indirect, stealth, and benign scenarios
 - **Real-time SSE dashboard** — no existing OpenClaw security tool has this
 - **Active blocking via before_tool_call** — context-aware, not just pattern matching on tool names
 - **Base64 + Unicode obfuscation detection** — decodes and scans hidden payloads
+- **Security audit hardened** — fixed XSS, CORS, ReDoS, and regex injection vulnerabilities
+- **Full integration test coverage** with type-safe parameter validation
 - **Zero-config deployment** — install the plugin, it protects all agents on the gateway
 
 ## What we learned
