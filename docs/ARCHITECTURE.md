@@ -24,7 +24,7 @@
 │  │  └─────┬──────┘ └─────┬─────┘ └────┬─────┘ └────┬────┘│    │
 │  │        │              │             │             │      │    │
 │  │  ┌─────┴──────────────┴─────────────┴─────────────┴───┐ │    │
-│  │  │          Core Scanner Module (130+ Patterns)       │  │    │
+│  │  │          Core Scanner Module (142+ Patterns)       │  │    │
 │  │  │  scanForInjection() | scanExecCommand()           │  │    │
 │  │  │  scanWriteContent() | isBlockedUrl()              │  │    │
 │  │  │  scanForHtmlExfiltration() | checkTypoglycemia()  │  │    │
@@ -168,7 +168,7 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 ## Features
 
 - **4 Hook Points:** `message_received`, `before_tool_call`, `tool_result_persist`, `message_sending`
-- **130+ Detection Patterns** (142 total primitives) in 15 Kategorien:
+- **142+ Detection Patterns** in 16 Kategorien:
   - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
   - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
   - Write Content Abuse (eval, exec, child_process, script tags)
@@ -225,7 +225,7 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 
 ## Tests
 
-- **340 Tests** (Vitest)
+- **366 Tests** (Vitest)
 - Scanner, Hooks, Audit Log, Rate Anomaly, Edge Cases
 - Markdown Exfiltration, SSRF, Path Traversal, ROT13, Security Headers
 

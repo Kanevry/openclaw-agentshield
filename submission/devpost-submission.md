@@ -32,7 +32,7 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 - **TypeScript** (ESM, strict mode) on **Node 24+**
 - **OpenClaw Plugin SDK** — hooks (api.on), tools (api.registerTool), HTTP routes (api.registerHttpRoute)
-- **Security scanner** with 130+ patterns across 14 categories (injection, exec abuse, write abuse, sensitive data, base64 decoding, typoglycemia, hex decoding, ROT13 obfuscation, HTML exfiltration, markdown exfiltration, system prompt extraction, SSRF/internal-network detection, path traversal, 22 API key/secret formats), forked from our battle-tested BitGN agent (20/20 security benchmark)
+- **Security scanner** with 142+ patterns across 16 categories (injection, exec abuse, write abuse, sensitive data, base64 decoding, typoglycemia, hex decoding, ROT13 obfuscation, HTML exfiltration, markdown exfiltration, system prompt extraction, SSRF/internal-network detection, path traversal, 22 API key/secret formats), forked from our battle-tested BitGN agent (20/20 security benchmark)
 - **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming, CSP with frame-ancestors/base-uri/object-src restrictions, and 4 security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
 - **Fail-open error handling** — plugin errors never crash the gateway
 - **Ring buffer audit log** (1000 entries) with severity filtering
@@ -46,12 +46,12 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 ## Accomplishments that we're proud of
 
-- **340 tests passing** — comprehensive coverage across injection, exec, write, indirect, stealth, obfuscation, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, and benign scenarios
+- **366 tests passing** — comprehensive coverage across injection, exec, write, indirect, stealth, obfuscation, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, and benign scenarios
 - **Real-time SSE dashboard** — no existing OpenClaw security tool has this
 - **Active blocking via before_tool_call** — context-aware, not just pattern matching on tool names
 - **Multi-layer obfuscation detection** — base64, hex, unicode, ROT13, and typoglycemia decoding
 - **Security audit hardened** — fixed XSS, CORS, ReDoS, regex injection; added CSP and 4 security headers
-- **60 attack corpus cases** — real-world prompt injection payloads from OWASP and research papers
+- **70 attack corpus cases** — real-world prompt injection payloads from OWASP and research papers
 - **Full integration test coverage** with type-safe parameter validation
 - **Zero-config deployment** — install the plugin, it protects all agents on the gateway
 

@@ -1,3 +1,8 @@
+---
+description: Scanner implementation standards and mandatory guards — ensures consistency across all scan functions
+globs: ["src/lib/scanner.ts", "tests/scanner.test.ts", "src/index.ts"]
+---
+
 # Scanner Standards (established Session F)
 
 ## Mandatory Guards for Public Scan Functions
