@@ -32,8 +32,8 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 - **TypeScript** (ESM, strict mode) on **Node 24+**
 - **OpenClaw Plugin SDK** — hooks (api.on), tools (api.registerTool), HTTP routes (api.registerHttpRoute)
-- **Security scanner** with 142+ patterns across 16 categories (injection, exec abuse, write abuse, sensitive data, base64 decoding, typoglycemia, hex decoding, ROT13 obfuscation, HTML exfiltration, markdown exfiltration, system prompt extraction, SSRF/internal-network detection, path traversal, 22 API key/secret formats), forked from our battle-tested BitGN agent (20/20 security benchmark)
-- **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming, CSP with frame-ancestors/base-uri/object-src restrictions, and 4 security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+- **Security scanner** with 180+ patterns across 16 categories (injection, exec abuse, write abuse, sensitive data, base64 decoding, typoglycemia, hex decoding, ROT13 obfuscation, HTML exfiltration, markdown exfiltration, system prompt extraction, SSRF/internal-network detection, path traversal, 22 API key/secret formats), forked from our battle-tested BitGN agent (20/20 security benchmark)
+- **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming, CSP with frame-ancestors/base-uri/object-src restrictions, and 6 security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, HSTS, Permissions-Policy)
 - **Fail-open error handling** — plugin errors never crash the gateway
 - **Ring buffer audit log** (1000 entries) with severity filtering
 - Deployed on Hetzner CX43 with Caddy reverse proxy and automatic TLS

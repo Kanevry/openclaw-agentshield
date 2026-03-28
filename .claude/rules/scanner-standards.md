@@ -22,8 +22,16 @@ Every exported scan function MUST:
 ## Pattern Arrays
 
 - All regex patterns: use lazy quantifiers `[^\n]*?` not greedy `.*`
+- Bounded quantifiers for HTML content: `[\s\S]{0,500}?` not unbounded `[^]*?` or `[\s\S]*?`
 - Regex literal in `readonly` array with `as const`
 - New patterns: add to appropriate array, add corresponding test, update SSOT counts
+
+## SSOT Pattern Counts
+
+- `PATTERN_COUNTS` exported from `scanner.ts` — object with all array lengths
+- Validated by `tests/ssot-counts.test.ts` — prevents SSOT drift between code and docs
+- When adding/removing patterns: SSOT test will fail, update the expected count in the test
+- Marketing total = sum of all counts minus `highSeverity` (overlap with injection patterns)
 
 ## Base64/Hex/ROT13 Segment Limits
 

@@ -22,7 +22,7 @@ globs: ["scripts/deploy*", "openclaw.plugin.json", "package.json"]
 2. SSH pull: `ssh root@188.245.81.195 'cd /opt/openclaw-agentshield && git pull origin main'`
 3. Install deps: `ssh root@188.245.81.195 'cd /opt/openclaw-agentshield && pnpm install --frozen-lockfile'`
 4. Reload gateway: `ssh root@188.245.81.195 'kill -HUP $(pgrep -f openclaw-gateway)'`
-5. Verify: `ssh root@188.245.81.195 'curl -s -o /dev/null -w "%{http_code}" http://localhost:18789/agentshield'`
+5. Verify: `curl -s -o /dev/null -w "%{http_code}" https://openclaw.gotzendorfer.at/agentshield`
 
 ## Post-Deploy Verification
 - Dashboard loads: https://openclaw.gotzendorfer.at/agentshield
