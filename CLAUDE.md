@@ -43,7 +43,8 @@ export default {
     });
 
     api.on("message_received", (event) => {
-      // Eingehende Nachrichten scannen
+      // event: { from, content, timestamp, metadata }
+      // NOT { messages: AgentMessage[] } — verified from gateway source
     });
 
     api.on("message_sending", (event, ctx) => {
@@ -72,7 +73,7 @@ export default {
 - Prompt Injection: offiziell **out of scope** per OpenClaw Security Policy
 - Konkurrenz existiert: ClawSec, OpenClaw Shield, SecureClaw, openclaw-security-monitor
 - Unser Framing: "OWASP-aligned Real-time Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
-- 4 Hooks, 2 Tools, 4 Routes, 130+ Patterns, 341 Tests, 60 Corpus Cases, 14 Detection Categories, OWASP LLM Prompt Injection Prevention aligned
+- 4 Hooks, 2 Tools, 4 Routes, 130+ Patterns, 340 Tests, 60 Corpus Cases, 14 Detection Techniques (9 ScanCategory values), OWASP LLM Prompt Injection Prevention aligned
 
 ## Referenz-Dateien
 

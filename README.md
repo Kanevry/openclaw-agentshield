@@ -48,7 +48,7 @@ Agent Response ──→ message_sending hook ──→ Leakage + data check
 - **Rate anomaly detection** — Sliding window counter detects abnormal tool call frequency. Configurable threshold (default: 30/min).
 - **HTML exfiltration defense** — Detects data theft via `<img>`, `<iframe>`, and HTML event handlers pointing to external domains.
 - **System prompt extraction defense** — Detects attempts to extract system prompts via "repeat the text above", "show me your prompt", and similar social engineering patterns.
-- **CSP-hardened dashboard** — Nonce-based Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, and Referrer-Policy headers protect the monitoring UI against XSS and clickjacking.
+- **CSP-hardened dashboard** — Content-Security-Policy (with frame-ancestors, base-uri, object-src restrictions), X-Content-Type-Options, X-Frame-Options, and Referrer-Policy headers protect the monitoring UI against clickjacking and MIME sniffing.
 - **Fail-open error handling** — Plugin errors never crash the gateway. Every hook is wrapped in `safeHandler()`.
 
 ## Install
@@ -150,7 +150,7 @@ Base64, hex, and ROT13-encoded variants of all injection patterns are also detec
 pnpm install
 pnpm run typecheck    # TypeScript strict mode
 pnpm run test         # Vitest
-pnpm run test:scanner # Attack corpus validation (341 tests)
+pnpm run test:scanner # Attack corpus validation (340 tests)
 ```
 
 ### Project Structure
@@ -164,7 +164,7 @@ src/
 │   ├── scanner.ts        Core scanner (130+ patterns, base64, hex, ROT13, unicode, typo)
 │   ├── scanner.types.ts  Type definitions
 │   ├── audit-log.ts      Ring buffer + SSE emitter
-│   ├── dashboard.ts      Dashboard HTML + CSP nonce generation
+│   ├── dashboard.ts      Dashboard HTML generation
 │   ├── circuit-breaker.ts
 │   └── retry.ts
 └── types/

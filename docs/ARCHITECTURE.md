@@ -168,7 +168,7 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 ## Features
 
 - **4 Hook Points:** `message_received`, `before_tool_call`, `tool_result_persist`, `message_sending`
-- **130+ Detection Patterns** in 11 Kategorien:
+- **130+ Detection Patterns** (142 total primitives) in 15 Kategorien:
   - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
   - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
   - Write Content Abuse (eval, exec, child_process, script tags)
@@ -218,14 +218,14 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 
 ## Dashboard Security
 
-- **Content-Security-Policy** Header mit CSP Nonce: `default-src 'self'; script-src 'nonce-{random}' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'`
+- **Content-Security-Policy** Header: `default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`
 - **X-Content-Type-Options:** `nosniff` (MIME-Sniffing Prevention)
 - **X-Frame-Options:** `DENY` (Clickjacking Prevention)
 - Gateway Auth (`auth: "gateway"`) mit Caddy `request_header Authorization` injection fuer public access
 
 ## Tests
 
-- **341 Tests** (Vitest)
+- **340 Tests** (Vitest)
 - Scanner, Hooks, Audit Log, Rate Anomaly, Edge Cases
 - Markdown Exfiltration, SSRF, Path Traversal, ROT13, Security Headers
 

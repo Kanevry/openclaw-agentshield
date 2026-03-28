@@ -25,8 +25,9 @@ NICHT `api.registerHook` — verwende `api.on()`:
 ```typescript
 // Eingehende Nachrichten scannen
 api.on("message_received", (event, ctx) => {
-  // event.messages: AgentMessage[]
-  // return: void (modify event.messages in place)
+  // event: { from: string, content: string, timestamp: string, metadata: Record<string, unknown> }
+  // NOT { messages: AgentMessage[] } — verified from gateway source
+  // return: void
 });
 
 // Tool-Calls abfangen/blocken
@@ -159,16 +160,27 @@ export function checkRot13Injections(text: string): string[]
 export function scanForMarkdownExfiltration(text: string): ScanResult
 
 // SSRF: internal IPs, cloud metadata, dangerous URL schemes
-export function checkSsrfPatterns(text: string): ScanResult
+export function checkSsrfPatterns(url: string): ScanResult
 
 // Path traversal: directory traversal, sensitive files, null bytes
-export function checkPathTraversal(text: string): ScanResult
+export function scanForPathTraversal(path: string): ScanResult
 ```
 
 ### SSRF Integration in before_tool_call
 `checkSsrfPatterns()` is integrated in the `before_tool_call` hook to scan URL parameters
 in tool calls (e.g., web_fetch, curl). Blocks requests to internal IPs, cloud metadata
 endpoints, and dangerous URL schemes. Works alongside `isBlockedUrl()` domain blocklist.
+
+### Path Traversal Integration in before_tool_call
+`scanForPathTraversal()` is integrated in the `before_tool_call` hook to scan file path
+parameters (path, file_path, filename) for directory traversal, sensitive file access,
+and null byte injection.
+
+### Dashboard Error Isolation
+All HTTP route handlers are wrapped in a top-level try/catch that:
+- Logs errors to console
+- Returns 500 "Internal Server Error" if headers not yet sent
+- Prevents plugin crashes from taking down the gateway
 
 ### DoS-Schutz in Scannern
 `MAX_SCAN_LENGTH = 1_000_000` — Early-Return in allen Scan-Funktionen.

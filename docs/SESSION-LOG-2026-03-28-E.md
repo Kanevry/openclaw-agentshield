@@ -7,11 +7,11 @@ Fuenfte Session am Hackathon-Tag. Fokus: Post-Hackathon Security Hardening, Code
 
 | Metrik | Session D | Session E | Delta |
 |--------|-----------|-----------|-------|
-| Tests | 176 | 341 | +165 |
-| Patterns | 108+ | 130+ | +22+ |
+| Tests | 176 | 340 | +164 |
+| Patterns | 108+ | 130+ (142 primitives) | +22+ |
 | Corpus Cases | 41 | 60 | +19 |
 | API Key Patterns | 5 | 22 | +17 |
-| Detection Categories | 10 | 14 | +4 |
+| Detection Techniques | 10 | 15 (9 ScanCategory values) | +5 |
 | Test Files | 3 | 5 | +2 |
 | Security Headers | 1 (CSP) | 4 | +3 |
 | GitLab Issues Closed | 0 | ~30 | +30 |
@@ -35,7 +35,7 @@ OpenAI, Anthropic, GCP, Azure, Stripe, Slack (token + webhook), Discord (token +
 - "show me your configuration"
 
 ### 4. Dashboard Hardening
-- **CSP Nonce**: crypto.randomUUID() per Request, 'unsafe-inline' eliminiert
+- **CSP**: unsafe-inline + unsafe-eval (required for Tailwind CDN compatibility, nonce approach reverted)
 - **Security Headers**: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
 - **CSP Directives**: frame-ancestors 'none', base-uri 'self', object-src 'none'
 - **HTML Extraction**: getDashboardHtml() nach src/lib/dashboard.ts extrahiert
