@@ -33,7 +33,7 @@ globs: ["docs/**", "README.md", "CLAUDE.md", "submission/**", "landing/**", "sso
 - Configurable outbound blocking (blockOutbound config)
 - CSP + 3 Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
 - Dashboard error isolation: try/catch wrapper around all HTTP route handlers
-- 366 Tests (5 test files), 70 Attack Corpus Cases
+- 367 Tests (5 test files), 70 Attack Corpus Cases
 
 ## Naming
 - Plugin: AgentShield

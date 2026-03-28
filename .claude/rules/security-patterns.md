@@ -8,7 +8,7 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 ## Summary (verifiziert 28.03.2026, Session F)
 - **142+ Detection Patterns** (155+ total primitives): 50 injection + 15 exec + 6 write + 22 sensitive data + 7 PII + 11 base64/hex/rot13 keywords + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 3 HTML exfil + TOOL_RISK_MAP
 - **16 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
-- **366 Tests** (5 test files), **70 Attack Corpus Cases**
+- **367 Tests** (5 test files), **70 Attack Corpus Cases**
 - **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
