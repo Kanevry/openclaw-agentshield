@@ -64,6 +64,13 @@ Stand: 27. März 2026. Alle Claims fact-checked.
 4. **Battle-tested Scanner** — Von BitGN PAC Agent (20/20 Score)
 5. **Hackathon-Kontext** — Von Practitioners für Practitioners, nicht von einer Security-Firma
 
+### Was wir NEU hinzugefügt haben (Session 28.03.2026)
+6. **OWASP LLM Prompt Injection Prevention Alignment** — Typoglycemia-Erkennung, Hex-Decoding, HTML-Exfiltration nach OWASP Cheat Sheet
+7. **Output Monitoring** — message_sending Hook scannt Agent-Antworten auf System Prompt Leakage
+8. **Rate Anomaly Detection** — Sliding-Window-Counter erkennt abnormale Tool-Call-Frequenz
+9. **159 Tests** — Von 125 auf 159 Tests erweitert (+34)
+10. **38 Attack Corpus Cases** — Von 33 auf 38 erweitert (+5)
+
 ### Was wir NICHT behaupten dürfen
 - ~~"Erstes Security-Tool für OpenClaw"~~ → Es gibt mindestens 4
 - ~~"247K Stars"~~ → Aktuell 337K+
@@ -71,4 +78,4 @@ Stand: 27. März 2026. Alle Claims fact-checked.
 - ~~"Niemand hat das Problem erkannt"~~ → Issue #30111, #30448, #22060 zeigen: Community weiß es
 
 ### Korrektes Framing
-> "OpenClaw hat 337K Stars und ein aktives Sicherheitsökosystem. Was fehlt: eine Real-time Security-Schicht die nicht nur auditiert, sondern aktiv blockt — mit einem Live-Dashboard das zeigt was gerade passiert. AgentShield ist dieser fehlende Layer."
+> "OpenClaw hat 337K Stars und ein aktives Sicherheitsökosystem. AgentShield ist die OWASP-aligned Real-time Security-Schicht die nicht nur auditiert, sondern aktiv blockt — mit Typoglycemia-Erkennung, Hex-Decoding, HTML-Exfiltration-Schutz und einem Live-Dashboard."

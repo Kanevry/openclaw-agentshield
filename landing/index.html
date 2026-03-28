@@ -306,7 +306,7 @@
 
     .hooks-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
 
@@ -332,6 +332,7 @@
     .hook-card:nth-child(1)::before { background: linear-gradient(90deg, var(--danger), transparent); }
     .hook-card:nth-child(2)::before { background: linear-gradient(90deg, var(--warn), transparent); }
     .hook-card:nth-child(3)::before { background: linear-gradient(90deg, var(--safe), transparent); }
+    .hook-card:nth-child(4)::before { background: linear-gradient(90deg, var(--accent), transparent); }
 
     .hook-card:hover {
       border-color: var(--border-glow);
@@ -587,6 +588,10 @@
     footer a:hover { color: var(--accent); }
 
     /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .hooks-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
     @media (max-width: 768px) {
       .hooks-grid { grid-template-columns: 1fr; }
       .scanner-section { grid-template-columns: 1fr; }
@@ -659,15 +664,15 @@
     <!-- Stats -->
     <div class="stats-bar animate-in delay-5">
       <div class="stat">
-        <div class="stat-value">74</div>
+        <div class="stat-value">100+</div>
         <div class="stat-label">Patterns</div>
       </div>
       <div class="stat">
-        <div class="stat-value">3</div>
+        <div class="stat-value">4</div>
         <div class="stat-label">Hooks</div>
       </div>
       <div class="stat">
-        <div class="stat-value">125</div>
+        <div class="stat-value">159</div>
         <div class="stat-label">Tests</div>
       </div>
       <div class="stat">
@@ -679,10 +684,10 @@
     <!-- Hooks -->
     <section class="hooks-section" id="hooks">
       <div class="section-label">Defense Layers</div>
-      <div class="section-title">Three hooks. Full coverage.</div>
+      <div class="section-title">Four hooks. Full coverage.</div>
       <div class="section-desc">
-        AgentShield intercepts messages, tool calls, and tool results in real-time.
-        Block threats before they reach the model.
+        AgentShield intercepts messages, tool calls, tool results, and outbound responses in real-time.
+        Block threats before they reach the model &mdash; and catch data leaks before they leave.
       </div>
       <div class="hooks-grid">
         <div class="hook-card">
@@ -691,7 +696,7 @@
           <div class="hook-title">Inbound Scan</div>
           <div class="hook-desc">
             Scans every user message for prompt injection, identity manipulation,
-            credential extraction, and obfuscated payloads (base64, unicode).
+            credential extraction, and obfuscated payloads (base64, hex, unicode, typoglycemia).
           </div>
         </div>
         <div class="hook-card">
@@ -712,6 +717,15 @@
             attacks smuggled through file reads, web fetches, and API responses.
           </div>
         </div>
+        <div class="hook-card">
+          <div class="hook-icon">&#x1f4e4;</div>
+          <div class="hook-name">message_sending</div>
+          <div class="hook-title">Output Monitoring</div>
+          <div class="hook-desc">
+            Monitors outbound agent responses for HTML exfiltration,
+            hidden data leaks, and rate anomalies. Last line of defense.
+          </div>
+        </div>
       </div>
     </section>
 
@@ -719,20 +733,23 @@
     <section class="scanner-section" id="scanner">
       <div class="scanner-info">
         <div class="section-label">Detection Engine</div>
-        <div class="section-title">74 attack patterns</div>
+        <div class="section-title">100+ attack patterns</div>
         <div class="section-desc">
-          Battle-tested scanner with base64 decoding, unicode normalization,
-          and context-aware severity scoring.
+          Battle-tested scanner with base64 decoding, hex decoding, unicode normalization,
+          typoglycemia detection (OWASP-recommended), and context-aware severity scoring.
         </div>
         <ul class="pattern-list">
           <li>Instruction override &amp; jailbreak</li>
           <li>Identity manipulation</li>
           <li>Credential extraction</li>
           <li>Markup injection ([SYSTEM], &lt;|im_start|&gt;)</li>
-          <li>Base64 &amp; unicode obfuscation</li>
+          <li>Base64, hex &amp; unicode obfuscation</li>
+          <li>Typoglycemia detection (OWASP-recommended)</li>
+          <li>HTML exfiltration defense (img/link tags)</li>
           <li>Data exfiltration (curl, wget, nc)</li>
           <li>Destructive commands (rm, chmod, dd)</li>
           <li>Code injection (eval, exec, child_process)</li>
+          <li>Rate anomaly detection</li>
         </ul>
       </div>
       <div class="terminal">

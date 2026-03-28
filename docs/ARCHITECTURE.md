@@ -14,20 +14,23 @@
 │  ┌────┴──────────────┴────────────┴──────────────┴──────┐    │
 │  │              AgentShield Plugin (alle Agents)         │    │
 │  │                                                       │    │
-│  │  ┌──────────────┐  ┌───────────────┐  ┌───────────┐  │    │
-│  │  │ message_     │  │ before_       │  │ tool_      │  │    │
-│  │  │ received     │  │ tool_call     │  │ result_    │  │    │
-│  │  │              │  │               │  │ persist    │  │    │
-│  │  │ Scan inbound │  │ Analyze+Block │  │ Scan       │  │    │
-│  │  │ messages     │  │ tool calls    │  │ results    │  │    │
-│  │  └──────┬───────┘  └──────┬────────┘  └─────┬─────┘  │    │
-│  │         │                 │                  │         │    │
-│  │  ┌──────┴─────────────────┴──────────────────┴──────┐  │    │
-│  │  │            Core Scanner Module                   │  │    │
-│  │  │  scanForInjection() | scanExecCommand()          │  │    │
-│  │  │  scanWriteContent() | isBlockedUrl()             │  │    │
-│  │  │  Base64 Decode | Unicode Normalize               │  │    │
-│  │  └──────────────────────┬───────────────────────────┘  │    │
+│  │  ┌────────────┐ ┌───────────┐ ┌──────────┐ ┌──────────┐│    │
+│  │  │ message_   │ │ before_   │ │ tool_    │ │ message_ ││    │
+│  │  │ received   │ │ tool_call │ │ result_  │ │ sending  ││    │
+│  │  │            │ │           │ │ persist  │ │          ││    │
+│  │  │ Scan       │ │ Analyze+  │ │ Scan     │ │ Rate     ││    │
+│  │  │ inbound    │ │ Block     │ │ results  │ │ Anomaly  ││    │
+│  │  │ messages   │ │ tool calls│ │          │ │ Check    ││    │
+│  │  └─────┬──────┘ └─────┬─────┘ └────┬─────┘ └────┬────┘│    │
+│  │        │              │             │             │      │    │
+│  │  ┌─────┴──────────────┴─────────────┴─────────────┴───┐ │    │
+│  │  │          Core Scanner Module (100+ Patterns)       │  │    │
+│  │  │  scanForInjection() | scanExecCommand()           │  │    │
+│  │  │  scanWriteContent() | isBlockedUrl()              │  │    │
+│  │  │  scanForHtmlExfiltration() | checkTypoglycemia()  │  │    │
+│  │  │  checkHexInjections() | checkRateAnomaly()        │  │    │
+│  │  │  Base64 Decode | Unicode Normalize                │  │    │
+│  │  └──────────────────────┬────────────────────────────┘ │    │
 │  │                         │                              │    │
 │  │  ┌──────────────────────┴───────────────────────────┐  │    │
 │  │  │           Audit Log (In-Memory Ring Buffer)      │  │    │
@@ -159,6 +162,39 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 - `options/` — PRDs und Entscheidungsprozess
 - `snippets/` — Originale Snippets (Code ist im src/ umgebaut)
 - `.claude/rules/` — Hackathon-spezifische Rules (enthalten Strategie)
+
+## Features
+
+- **4 Hook Points:** `message_received`, `before_tool_call`, `tool_result_persist`, `message_sending`
+- **100+ Detection Patterns** in 6 Kategorien:
+  - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
+  - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
+  - Write Content Abuse (eval, exec, child_process, script tags)
+  - HTML Exfiltration (Markdown Image Exfil, Hidden iframes, Meta Refresh Redirects)
+  - Typoglycemia Detection (visuelle Aehnlichkeit fuer Homoglyph-Attacken)
+  - Hex-encoded Injection Payloads
+- **Rate Anomaly Detection:** Erkennung ungewoehnlicher Tool-Call-Frequenzen pro Agent
+- **Base64 Decode + Unicode Normalize** als Pre-Processing
+- **URL Blocking** mit Subdomain-Awareness
+- **Real-time Dashboard** mit SSE Live Events
+- **Active Blocking** (nicht nur Logging) via `before_tool_call`
+- **Audit Log** (In-Memory Ring Buffer, max 1000 Eintraege)
+- **Agent Tools:** `shield_scan`, `shield_audit`
+
+## Module (src/)
+
+| Datei | Funktion |
+|-------|----------|
+| `src/index.ts` | Plugin Entry, Hook Registration, `checkRateAnomaly()` |
+| `src/lib/scanner.ts` | Core Scanner: `scanForInjection()`, `scanExecCommand()`, `scanWriteContent()`, `isBlockedUrl()`, `scanForHtmlExfiltration()`, `checkTypoglycemia()`, `checkHexInjections()` |
+| `src/lib/scanner.types.ts` | Typen: ScanResult, ScanContext, Severity |
+| `src/lib/audit-log.ts` | Ring Buffer, SSE Emitter, Stats |
+| `src/hooks/safe-handler.ts` | Fail-open Wrapper (Plugin darf Gateway nicht crashen) |
+
+## Tests
+
+- **159 Tests** (Vitest)
+- Scanner, Hooks, Audit Log, Rate Anomaly, Edge Cases
 
 ## Wie Clank von AgentShield profitiert
 
