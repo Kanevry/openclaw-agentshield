@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scanForInjection, scanExecCommand, scanWriteContent } from "../src/lib/scanner.js";
+import { scanForInjection, scanExecCommand, scanWriteContent, scanForSensitiveData, scanForPathTraversal } from "../src/lib/scanner.js";
 import type { Severity } from "../src/lib/scanner.types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -60,6 +60,23 @@ for (const tc of corpus.cases) {
       break;
     case "write":
       result = scanWriteContent(tc.input);
+      break;
+    case "read":
+      // Try path traversal first, then sensitive data, then injection
+      result = scanForPathTraversal(tc.input);
+      if (!result.detected) {
+        result = scanForSensitiveData(tc.input);
+      }
+      if (!result.detected) {
+        result = scanForInjection(tc.input);
+      }
+      break;
+    case "general":
+      // Try sensitive data first, then injection
+      result = scanForSensitiveData(tc.input);
+      if (!result.detected) {
+        result = scanForInjection(tc.input);
+      }
       break;
     default:
       result = scanForInjection(tc.input);

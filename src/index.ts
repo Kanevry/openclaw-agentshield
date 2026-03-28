@@ -66,8 +66,25 @@ function asScanContext(val: unknown): ScanContext | undefined {
 
 const TRUNCATE_LENGTH = 100;
 const SSE_HEARTBEAT_MS = 15_000;
+const SSE_INACTIVITY_TIMEOUT_MS = 5 * 60_000; // 5 minutes — close stale SSE connections
 const DEFAULT_RATE_LIMIT = 30;
 const AUDIT_LOG_CAPACITY = 1_000;
+
+// ── OWASP LLM05: Tool Risk Classification (Audit-only) ─────────────
+const TOOL_RISK_MAP: Record<string, "low" | "medium" | "high" | "critical"> = {
+  // High risk — can modify system state or exfiltrate data
+  exec: "critical", shell: "critical", bash: "critical",
+  write: "high", edit: "high",
+  browser: "high", web_fetch: "high",
+  // Medium risk — can read sensitive data
+  read: "medium", glob: "medium", grep: "medium",
+  // Low risk — informational only
+  ls: "low", search: "low", ask: "low",
+};
+
+function getToolRisk(toolName: string): "low" | "medium" | "high" | "critical" {
+  return TOOL_RISK_MAP[toolName] ?? "medium";
+}
 
 // ── Outcome Helper ──────────────────────────────────────────────────
 
@@ -264,6 +281,20 @@ export default {
                 };
               }
             }
+          }
+
+          // OWASP LLM05: Log tool risk classification (audit-only, no blocking)
+          const toolRisk = getToolRisk(toolName);
+          if (toolRisk === "critical" || toolRisk === "high") {
+            auditLog.add({
+              hook: "before_tool_call",
+              toolName,
+              severity: "low",
+              category: "none",
+              patterns: [`risk:${toolRisk}`],
+              outcome: "allowed",
+              details: `Tool risk: ${toolRisk} — ${toolName}`,
+            });
           }
 
           return undefined; // allow
@@ -469,25 +500,48 @@ export default {
           res.setHeader("Cache-Control", "no-cache");
           res.setHeader("Connection", "keep-alive");
 
+          let lastActivity = Date.now();
+
           const unsubscribe = auditLog.subscribe((entry) => {
+            lastActivity = Date.now();
             try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch {
               console.debug("[AgentShield] SSE write failed (client disconnected)");
             }
           });
 
+          let cleaned = false;
+          const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            clearInterval(heartbeat);
+            clearInterval(inactivityCheck);
+            unsubscribe();
+          };
+
           // Heartbeat to keep connection alive through proxies
           const heartbeat = setInterval(() => {
-            try { res.write(`: heartbeat\n\n`); } catch {
+            try {
+              res.write(`: heartbeat\n\n`);
+              lastActivity = Date.now(); // Reset inactivity timer on successful heartbeat
+            } catch {
               console.debug("[AgentShield] SSE heartbeat failed (client disconnected)");
-              clearInterval(heartbeat);
+              cleanup();
+            }
+          }, SSE_HEARTBEAT_MS);
+
+          // Close stale connections that haven't received events
+          const inactivityCheck = setInterval(() => {
+            if (Date.now() - lastActivity > SSE_INACTIVITY_TIMEOUT_MS) {
+              console.debug("[AgentShield] SSE inactivity timeout — closing connection");
+              cleanup();
+              try { res.end(); } catch { /* already closed */ }
             }
           }, SSE_HEARTBEAT_MS);
 
           res.write(`event: stats\ndata: ${JSON.stringify(auditLog.getStats())}\n\n`);
 
           req.on("close", () => {
-            clearInterval(heartbeat);
-            unsubscribe();
+            cleanup();
           });
           return;
         }

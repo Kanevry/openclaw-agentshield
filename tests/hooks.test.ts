@@ -399,6 +399,94 @@ describe("AgentShield Plugin", () => {
         expect(result!.blockReason).toContain("max 5");
       });
     });
+
+    // ── OWASP LLM05 tool risk classification ────────────────────────
+
+    describe("OWASP LLM05 tool risk classification", () => {
+      it("logs critical risk for exec tools", async () => {
+        const handler = mock.hooks.get("before_tool_call")!;
+        const auditTool = mock.tools.get("shield_audit")!;
+
+        // Snapshot before
+        const before = await auditTool.def.execute!("lm05-pre-1", { limit: 1000 });
+        const countBefore = (before.content[0]!.text.match(/Tool risk: critical/g) ?? []).length;
+
+        const event: BeforeToolCallEvent = {
+          toolName: "exec",
+          params: { command: "git status" },
+        };
+
+        handler(event, permissiveConfig);
+
+        // Verify a "Tool risk: critical" audit entry was created
+        const after = await auditTool.def.execute!("lm05-post-1", { limit: 1000 });
+        const textAfter = after.content[0]!.text;
+        const countAfter = (textAfter.match(/Tool risk: critical/g) ?? []).length;
+        expect(countAfter).toBeGreaterThan(countBefore);
+        expect(textAfter).toContain("Tool risk: critical — exec");
+      });
+
+      it("logs high risk for write tools", async () => {
+        const handler = mock.hooks.get("before_tool_call")!;
+        const auditTool = mock.tools.get("shield_audit")!;
+
+        const before = await auditTool.def.execute!("lm05-pre-2", { limit: 1000 });
+        const countBefore = (before.content[0]!.text.match(/Tool risk: high/g) ?? []).length;
+
+        const event: BeforeToolCallEvent = {
+          toolName: "write",
+          params: { content: "const x = 42;" },
+        };
+
+        handler(event, permissiveConfig);
+
+        const after = await auditTool.def.execute!("lm05-post-2", { limit: 1000 });
+        const textAfter = after.content[0]!.text;
+        const countAfter = (textAfter.match(/Tool risk: high/g) ?? []).length;
+        expect(countAfter).toBeGreaterThan(countBefore);
+        expect(textAfter).toContain("Tool risk: high — write");
+      });
+
+      it("does not log risk for low-risk tools", async () => {
+        const handler = mock.hooks.get("before_tool_call")!;
+        const auditTool = mock.tools.get("shield_audit")!;
+
+        const before = await auditTool.def.execute!("lm05-pre-3", { limit: 1000 });
+        const countBefore = (before.content[0]!.text.match(/Tool risk: low/g) ?? []).length;
+
+        const event: BeforeToolCallEvent = {
+          toolName: "ls",
+          params: {},
+        };
+
+        handler(event, permissiveConfig);
+
+        // Verify NO "Tool risk: low" entry was created (only critical/high are logged)
+        const after = await auditTool.def.execute!("lm05-post-3", { limit: 1000 });
+        const countAfter = (after.content[0]!.text.match(/Tool risk: low/g) ?? []).length;
+        expect(countAfter).toBe(countBefore);
+      });
+
+      it("does not log risk for medium-risk tools", async () => {
+        const handler = mock.hooks.get("before_tool_call")!;
+        const auditTool = mock.tools.get("shield_audit")!;
+
+        const before = await auditTool.def.execute!("lm05-pre-4", { limit: 1000 });
+        const countBefore = (before.content[0]!.text.match(/Tool risk: medium/g) ?? []).length;
+
+        const event: BeforeToolCallEvent = {
+          toolName: "read",
+          params: { path: "/tmp/safe.txt" },
+        };
+
+        handler(event, permissiveConfig);
+
+        // Medium risk is NOT logged (only critical/high)
+        const after = await auditTool.def.execute!("lm05-post-4", { limit: 1000 });
+        const countAfter = (after.content[0]!.text.match(/Tool risk: medium/g) ?? []).length;
+        expect(countAfter).toBe(countBefore);
+      });
+    });
   });
 
   // ── tool_result_persist ──────────────────────────────────────────
@@ -780,10 +868,16 @@ describe("AgentShield Plugin", () => {
     it("returns undefined on error (fail-open)", () => {
       const handler = mock.hooks.get("before_tool_call")!;
 
+      // Use high rateLimit so rate-anomaly check passes before hitting the null-params error.
+      // Module-level toolCallTimestamps accumulates across all tests in this suite.
+      const highRateConfig: PluginContext = {
+        config: { ...strictConfig.config, rateLimit: 9999 },
+      };
+
       // params is not an object — will cause errors in string coercion
       const result = handler(
         { toolName: "exec", params: null },
-        strictConfig,
+        highRateConfig,
       ) as BeforeToolCallResult | undefined;
 
       // safeHandler returns undefined on error = allow

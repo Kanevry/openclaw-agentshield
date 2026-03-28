@@ -148,6 +148,11 @@ function normalizeText(text: string): string {
     .replace(ZERO_WIDTH_RE, "");
 }
 
+/** Collapse whitespace (newlines, tabs, multiple spaces) to single spaces for pattern matching. */
+function collapseWhitespace(text: string): string {
+  return text.replace(/\s+/g, " ");
+}
+
 // ── Base64 Detection ─────────────────────────────────────────────────
 
 const OBFUSCATION_KEYWORDS: readonly string[] = [
@@ -176,12 +181,16 @@ function isValidBase64(segment: string): boolean {
   }
 }
 
+const MAX_BASE64_SEGMENTS = 100; // Prevent memory exhaustion from huge segment arrays
+
 function checkBase64Injections(text: string): string[] {
+  if (text.length > MAX_SCAN_LENGTH) return [];
   const matches: string[] = [];
   const segments = text.match(BASE64_SEGMENT_RE);
   if (!segments) return matches;
 
-  for (const segment of segments) {
+  const limited = segments.length > MAX_BASE64_SEGMENTS ? segments.slice(0, MAX_BASE64_SEGMENTS) : segments;
+  for (const segment of limited) {
     if (!isValidBase64(segment)) continue;
     let decoded: string;
     try {
@@ -390,9 +399,10 @@ export function scanForPathTraversal(path: string): ScanResult {
   if (path.length > MAX_SCAN_LENGTH) {
     return { detected: false, patterns: [], severity: "none", category: "none" };
   }
+  const normalized = normalizeText(path);
   const matched: string[] = [];
   for (const pattern of PATH_TRAVERSAL_PATTERNS) {
-    if (pattern.test(path)) {
+    if (pattern.test(normalized)) {
       matched.push(pattern.source);
     }
   }
@@ -471,6 +481,19 @@ const SENSITIVE_DATA_PATTERNS: readonly { name: string; pattern: RegExp }[] = [
   { name: "vercel-token", pattern: /vercel_[A-Za-z0-9_-]{24,}/ },
   // Generic fallback
   { name: "generic-api-key", pattern: /(?:api[_-]?key|apikey|secret[_-]?key)\s*[:=]\s*['"]?[A-Za-z0-9_\-]{20,}/i },
+  // ── PII Patterns (OWASP LLM02 — Sensitive Information Disclosure) ──
+  // Credit cards (Luhn-like prefix matching, NOT full Luhn validation)
+  { name: "pii-visa", pattern: /\b4[0-9]{3}[\s-]?[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}\b/ },
+  { name: "pii-mastercard", pattern: /\b5[1-5][0-9]{2}[\s-]?[0-9]{4}[\s-]?[0-9]{4}[\s-]?[0-9]{4}\b/ },
+  { name: "pii-amex", pattern: /\b3[47][0-9]{2}[\s-]?[0-9]{6}[\s-]?[0-9]{5}\b/ },
+  // IBAN (2 letter country + 2 check digits + up to 30 alphanumeric)
+  { name: "pii-iban", pattern: /\b[A-Z]{2}\d{2}[\s]?[\dA-Z]{4}[\s]?(?:[\dA-Z]{4}[\s]?){1,7}[\dA-Z]{1,4}\b/ },
+  // US Social Security Number
+  { name: "pii-ssn", pattern: /\b\d{3}-\d{2}-\d{4}\b/ },
+  // Email addresses (in sensitive data context — credentials, configs)
+  { name: "pii-email", pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/ },
+  // Phone numbers (international format)
+  { name: "pii-phone", pattern: /(?<!\w)\+\d{1,3}[\s-]?\(?\d{1,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}\b/ },
 ] as const;
 
 // ── Core Scan Functions ──────────────────────────────────────────────
@@ -484,7 +507,9 @@ export function scanForInjection(text: string): ScanResult {
     return { detected: false, patterns: [], severity: "none", category: "none" };
   }
   const normalized = normalizeText(text);
-  const lower = normalized.toLowerCase();
+  // Collapse newlines/tabs to spaces so "ignore\nprevious\ninstructions" matches
+  const collapsed = collapseWhitespace(normalized);
+  const lower = collapsed.toLowerCase();
   const matched: string[] = [];
 
   for (const pattern of INJECTION_PATTERNS) {
@@ -532,10 +557,11 @@ export function scanExecCommand(
     return { detected: false, patterns: [], severity: "none", category: "none" };
   }
 
+  const normalized = normalizeText(command);
   const matched: string[] = [];
 
   for (const pattern of EXEC_DANGER_PATTERNS) {
-    if (pattern.test(command)) {
+    if (pattern.test(normalized)) {
       matched.push(pattern.source);
     }
   }
@@ -559,10 +585,11 @@ export function scanWriteContent(content: string): ScanResult {
   if (content.length > MAX_SCAN_LENGTH) {
     return { detected: false, patterns: [], severity: "none", category: "none" };
   }
+  const normalized = normalizeText(content);
   const matched: string[] = [];
 
   for (const pattern of WRITE_DANGER_PATTERNS) {
-    if (pattern.test(content)) {
+    if (pattern.test(normalized)) {
       matched.push(pattern.source);
     }
   }
