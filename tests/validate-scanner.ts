@@ -17,7 +17,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 interface TestCase {
   id: string;
-  name: string;
+  name?: string;
+  description?: string;
   input: string;
   context: "message" | "exec" | "write" | "read" | "general";
   expectedDetected: boolean;
@@ -71,14 +72,16 @@ for (const tc of corpus.cases) {
 
   if (detectionOk && severityOk) {
     passed++;
-    console.log(`  \x1b[32m✓\x1b[0m ${tc.id}: ${tc.name}`);
+    const label = tc.name ?? tc.description ?? tc.id;
+    console.log(`  \x1b[32m✓\x1b[0m ${tc.id}: ${label}`);
   } else {
     failed++;
     const reason = !detectionOk
       ? `detected=${result.detected}, expected=${tc.expectedDetected}`
       : `severity=${result.severity}, expected>=${tc.expectedMinSeverity}`;
-    failures.push(`${tc.id}: ${tc.name} — ${reason}`);
-    console.log(`  \x1b[31m✗\x1b[0m ${tc.id}: ${tc.name} — ${reason}`);
+    const label = tc.name ?? tc.description ?? tc.id;
+    failures.push(`${tc.id}: ${label} — ${reason}`);
+    console.log(`  \x1b[31m✗\x1b[0m ${tc.id}: ${label} — ${reason}`);
   }
 }
 

@@ -19,11 +19,12 @@ We built AgentShield to fill exactly these gaps.
 
 ## What it does
 
-AgentShield is a native OpenClaw plugin that intercepts and analyzes all agent activity across three hooks:
+AgentShield is a native OpenClaw plugin that intercepts and analyzes all agent activity across four hooks:
 
-1. **Inbound message scanning** — Detects prompt injection, identity manipulation, credential extraction, and obfuscated payloads (base64, unicode) in user messages
-2. **Tool call guardrails** — Analyzes exec, write, and browser commands for data exfiltration, destructive operations, and environment leaks. Blocks in strict mode.
+1. **Inbound message scanning** — Detects prompt injection, identity manipulation, credential extraction, and obfuscated payloads (base64, hex, unicode, typoglycemia) in user messages
+2. **Tool call guardrails** — Analyzes exec, write, and browser commands for data exfiltration, destructive operations, and environment leaks. Blocks in strict mode. Includes rate anomaly detection.
 3. **Indirect injection defense** — Scans tool results (file reads, web fetches, API responses) for embedded injection payloads
+4. **Output monitoring** — Scans outbound agent responses for HTML exfiltration, system prompt extraction, and data leaks. Last line of defense.
 
 Plus a **real-time dashboard** with SSE streaming that shows every scan result live, and two **agent-callable tools** (shield_scan, shield_audit) so the agent can self-assess threats.
 
@@ -31,7 +32,7 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 - **TypeScript** (ESM, strict mode) on **Node 24+**
 - **OpenClaw Plugin SDK** — hooks (api.on), tools (api.registerTool), HTTP routes (api.registerHttpRoute)
-- **Security scanner** with 74 patterns (37 injection, 15 exec, 6 write, 5 sensitive data, 11 base64), forked from our battle-tested BitGN agent (20/20 security benchmark)
+- **Security scanner** with 108+ patterns (37 injection, 15 exec, 6 write, 5 sensitive data, 11 base64, typoglycemia, hex decoding, HTML exfiltration, system prompt extraction), forked from our battle-tested BitGN agent (20/20 security benchmark)
 - **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming
 - **Fail-open error handling** — plugin errors never crash the gateway
 - **Ring buffer audit log** (1000 entries) with severity filtering
@@ -45,7 +46,7 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 ## Accomplishments that we're proud of
 
-- **125 tests passing** (33 scanner corpus + 38 audit-log + 57 scanner + 30 hooks) — comprehensive coverage across injection, exec, write, indirect, stealth, and benign scenarios
+- **170+ tests passing** — comprehensive coverage across injection, exec, write, indirect, stealth, obfuscation, and benign scenarios
 - **Real-time SSE dashboard** — no existing OpenClaw security tool has this
 - **Active blocking via before_tool_call** — context-aware, not just pattern matching on tool names
 - **Base64 + Unicode obfuscation detection** — decodes and scans hidden payloads

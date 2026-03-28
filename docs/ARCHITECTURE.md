@@ -24,7 +24,7 @@
 │  │  └─────┬──────┘ └─────┬─────┘ └────┬─────┘ └────┬────┘│    │
 │  │        │              │             │             │      │    │
 │  │  ┌─────┴──────────────┴─────────────┴─────────────┴───┐ │    │
-│  │  │          Core Scanner Module (100+ Patterns)       │  │    │
+│  │  │          Core Scanner Module (108+ Patterns)       │  │    │
 │  │  │  scanForInjection() | scanExecCommand()           │  │    │
 │  │  │  scanWriteContent() | isBlockedUrl()              │  │    │
 │  │  │  scanForHtmlExfiltration() | checkTypoglycemia()  │  │    │
@@ -166,18 +166,19 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 ## Features
 
 - **4 Hook Points:** `message_received`, `before_tool_call`, `tool_result_persist`, `message_sending`
-- **100+ Detection Patterns** in 6 Kategorien:
+- **108+ Detection Patterns** in 7 Kategorien:
   - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
   - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
   - Write Content Abuse (eval, exec, child_process, script tags)
   - HTML Exfiltration (External img/iframe src, HTML event handlers on media/embed tags)
   - Typoglycemia Detection (scrambled middle letters, OWASP-recommended)
   - Hex-encoded Injection Payloads
+  - System Prompt Extraction (8 patterns: "what is your system prompt", "print your system prompt", etc.)
 - **Rate Anomaly Detection:** Erkennung ungewoehnlicher Tool-Call-Frequenzen pro Agent
 - **Base64 Decode + Unicode Normalize** als Pre-Processing
 - **URL Blocking** mit Subdomain-Awareness
 - **Real-time Dashboard** mit SSE Live Events
-- **Active Blocking** (nicht nur Logging) via `before_tool_call`
+- **Active Blocking** (nicht nur Logging) via `before_tool_call` und `message_sending` (mit `blockOutbound` Config)
 - **Audit Log** (In-Memory Ring Buffer, max 1000 Eintraege)
 - **Agent Tools:** `shield_scan`, `shield_audit`
 
@@ -186,10 +187,32 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 | Datei | Funktion |
 |-------|----------|
 | `src/index.ts` | Plugin Entry, Hook Registration, `checkRateAnomaly()` |
-| `src/lib/scanner.ts` | Core Scanner: `scanForInjection()`, `scanExecCommand()`, `scanWriteContent()`, `isBlockedUrl()`, `scanForHtmlExfiltration()`, `checkTypoglycemia()`, `checkHexInjections()` |
+| `src/lib/scanner.ts` | Core Scanner: `scanForInjection()`, `scanExecCommand()`, `scanWriteContent()`, `isBlockedUrl()`, `scanForHtmlExfiltration()`, `checkTypoglycemia()`, `checkHexInjections()`, `calcSeverity()` (centralized severity calculation) |
 | `src/lib/scanner.types.ts` | Typen: ScanResult, ScanContext, Severity |
 | `src/lib/audit-log.ts` | Ring Buffer, SSE Emitter, Stats |
 | `src/hooks/safe-handler.ts` | Fail-open Wrapper (Plugin darf Gateway nicht crashen) |
+
+## Config (openclaw.plugin.json)
+
+| Key | Type | Default | Beschreibung |
+|-----|------|---------|-------------|
+| `strictMode` | boolean | `false` | `true` = block, `false` = warn only (applies to `before_tool_call`) |
+| `allowedExecPatterns` | string[] | `["git *", "npm *", ...]` | Glob patterns fuer erlaubte exec Commands |
+| `blockedDomains` | string[] | `[]` | URL Blocklist (Subdomain-aware) |
+| `dashboard` | boolean | `true` | Dashboard HTTP Routes registrieren |
+| `rateLimit` | number | `30` | Max Tool Calls pro Minute (Rate Anomaly Detection) |
+| `blockOutbound` | boolean | `false` | Blocks outbound messages when injection or sensitive data detected (`message_sending` hook) |
+
+## Hook Behavior
+
+- **`before_tool_call`**: Kann blocken wenn `strictMode: true`
+- **`message_sending`**: Kann ausgehende Nachrichten blocken wenn `blockOutbound: true` (Injection oder Sensitive Data im Output)
+- **`message_received`** und **`tool_result_persist`**: Warnen nur (kein Block moeglich)
+
+## Dashboard Security
+
+- **Content-Security-Policy** Header: `default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'`
+- Gateway Auth (`auth: "gateway"`) mit Caddy `request_header Authorization` injection fuer public access
 
 ## Tests
 

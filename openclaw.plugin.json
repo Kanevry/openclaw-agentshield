@@ -33,6 +33,11 @@
         "default": 30,
         "minimum": 1,
         "description": "Max tool calls per minute before rate anomaly warning/block"
+      },
+      "blockOutbound": {
+        "type": "boolean",
+        "default": false,
+        "description": "Block outbound messages when injection or sensitive data is detected (default: warn only)"
       }
     }
   }

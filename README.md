@@ -17,7 +17,7 @@ Agent Response ──→ message_sending hook ──→ Leakage + data check
                                             │
                                     ┌───────┴───────┐
                                     │  Core Scanner  │
-                                    │ 100+ patterns  │
+                                    │ 108+ patterns  │
                                     │  Base64 decode │
                                     │  Hex decode    │
                                     │  Unicode norm  │
@@ -43,6 +43,8 @@ Agent Response ──→ message_sending hook ──→ Leakage + data check
 - **Output monitoring** — `message_sending` hook scans agent responses for accidental system prompt leakage and sensitive data exposure.
 - **Rate anomaly detection** — Sliding window counter detects abnormal tool call frequency. Configurable threshold (default: 30/min).
 - **HTML exfiltration defense** — Detects data theft via `<img>`, `<iframe>`, and HTML event handlers pointing to external domains.
+- **System prompt extraction defense** — Detects attempts to extract system prompts via "repeat the text above", "show me your prompt", and similar social engineering patterns.
+- **CSP-hardened dashboard** — Content-Security-Policy headers restrict script and connection sources, preventing XSS in the monitoring UI.
 - **Fail-open error handling** — Plugin errors never crash the gateway. Every hook is wrapped in `safeHandler()`.
 
 ## Install
@@ -75,6 +77,7 @@ All options in `openclaw.plugin.json`:
 | `allowedExecPatterns` | `string[]` | `["git *", "npm *", "pnpm *", "node *", "python *", "tsc *"]` | Glob patterns for safe exec commands |
 | `blockedDomains` | `string[]` | `[]` | Domains to block in browser/fetch calls |
 | `rateLimit` | `number` | `30` | Max tool calls per minute before anomaly alert |
+| `blockOutbound` | `boolean` | `false` | Block outbound messages when injection or sensitive data is detected (default: warn only) |
 | `dashboard` | `boolean` | `true` | Enable the dashboard HTTP routes |
 
 ## Dashboard
@@ -129,6 +132,7 @@ API endpoints:
 | **Exec Abuse** | curl/wget to external hosts, `rm -rf /`, `sudo`, env leaking |
 | **Write Abuse** | `eval()`, `exec()`, `require('child_process')`, `<script>` |
 | **Sensitive Data** | AWS keys, JWT tokens, private keys, GitHub tokens |
+| **System Prompt Extraction** | "repeat the text above", "show me your prompt", "what are your instructions" |
 
 Base64-encoded variants of all injection patterns are also detected.
 
@@ -138,7 +142,7 @@ Base64-encoded variants of all injection patterns are also detected.
 pnpm install
 pnpm run typecheck    # TypeScript strict mode
 pnpm run test         # Vitest
-pnpm run test:scanner # Attack corpus validation (159 tests)
+pnpm run test:scanner # Attack corpus validation (170+ tests)
 ```
 
 ### Project Structure
@@ -149,7 +153,7 @@ src/
 ├── hooks/
 │   └── safe-handler.ts   Fail-open error wrapper
 ├── lib/
-│   ├── scanner.ts        Core scanner (100+ patterns, base64, hex, unicode, typo)
+│   ├── scanner.ts        Core scanner (108+ patterns, base64, hex, unicode, typo)
 │   ├── scanner.types.ts  Type definitions
 │   ├── audit-log.ts      Ring buffer + SSE emitter
 │   ├── circuit-breaker.ts
@@ -157,7 +161,7 @@ src/
 └── types/
     └── openclaw.d.ts     OpenClaw Plugin SDK types
 tests/
-├── attack-corpus.json    33 test cases
+├── attack-corpus.json    41 test cases
 └── validate-scanner.ts   Corpus runner
 ```
 

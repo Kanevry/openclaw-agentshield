@@ -74,9 +74,11 @@ function getOutcome(
   detected: boolean,
   hook: "message_received" | "before_tool_call" | "tool_result_persist" | "message_sending" | "manual",
   strictMode?: boolean,
+  blockOutbound?: boolean,
 ): "blocked" | "warned" | "allowed" {
   if (!detected) return "allowed";
   if (hook === "before_tool_call" && strictMode) return "blocked";
+  if (hook === "message_sending" && blockOutbound) return "blocked";
   return "warned";
 }
 
@@ -304,25 +306,31 @@ export default {
     // ── Hook: message_sending (Output Monitoring) ────────────────────
     api.on(
       "message_sending",
-      safeHandler("message_sending", (event: { message: import("./types/openclaw.js").AgentMessage }, _ctx: PluginContext) => {
+      safeHandler("message_sending", (event: { message: import("./types/openclaw.js").AgentMessage }, ctx: PluginContext) => {
         const { message } = event;
         if (message.role !== "assistant") return;
 
+        const config = ctx.config;
         const result = scanForInjection(message.content);
         const sensitiveResult = scanForSensitiveData(message.content);
 
         if (result.detected || sensitiveResult.detected) {
           const combined = result.detected ? result : sensitiveResult;
+          const outcome = getOutcome(true, "message_sending", undefined, config.blockOutbound);
           auditLog.add({
             hook: "message_sending",
             severity: combined.severity,
             category: combined.category,
             patterns: combined.patterns,
-            outcome: getOutcome(true, "message_sending"),
+            outcome,
             details: result.detected
               ? `Potential prompt leakage in agent output: ${result.patterns.join(", ")}`
               : `Sensitive data in agent output: ${sensitiveResult.patterns.join(", ")}`,
           });
+
+          if (config.blockOutbound) {
+            return { cancel: true };
+          }
         }
       }),
     );
@@ -466,6 +474,7 @@ export default {
 
         // Default: HTML dashboard
         res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'");
         res.end(getDashboardHtml());
       },
     });
