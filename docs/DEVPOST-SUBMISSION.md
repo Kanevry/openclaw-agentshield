@@ -17,7 +17,7 @@ OpenClaw has 337,000+ stars on GitHub. Its creator, Peter Steinberger, is now at
 
 AgentShield fills that gap. It is a native OpenClaw plugin that hooks into the full agent lifecycle through four hook points: `message_received` scans every inbound user message for injection patterns. `before_tool_call` analyzes commands before execution and actively blocks dangerous ones — data exfiltration, destructive commands, environment leaks. `tool_result_persist` scans file reads, web fetches, and API responses for indirect injection payloads hidden in content. `message_sending` monitors the agent's own responses for accidental system prompt leakage and sensitive data exposure. Install the plugin, and it protects every agent on the gateway — zero config.
 
-Under the hood, AgentShield runs 142+ detection patterns across 16 categories: instruction overrides, identity manipulation, credential extraction, markup injection, jailbreaks, data exfiltration, SSRF, path traversal, markdown exfiltration, HTML exfiltration, ROT13 obfuscation, system prompt extraction, and 22 API key/secret formats. It decodes base64, hex, and ROT13-encoded payloads, normalizes unicode, strips zero-width characters, and detects typoglycemia (scrambled-letter) evasion attacks — aligned with the OWASP LLM Prompt Injection Prevention Cheat Sheet. Every scan result streams in real-time to a live HTML dashboard via Server-Sent Events. The agent itself can call `shield_scan` and `shield_audit` as registered tools to proactively assess threats and query the audit log.
+Under the hood, AgentShield runs 180+ detection patterns across 16 categories: instruction overrides, identity manipulation, credential extraction, markup injection, jailbreaks, data exfiltration, SSRF, path traversal, markdown exfiltration, HTML exfiltration, ROT13 obfuscation, system prompt extraction, and 22 API key/secret formats. It decodes base64, hex, and ROT13-encoded payloads, normalizes unicode, strips zero-width characters, and detects typoglycemia (scrambled-letter) evasion attacks — aligned with the OWASP LLM Prompt Injection Prevention Cheat Sheet. Every scan result streams in real-time to a live HTML dashboard via Server-Sent Events. The agent itself can call `shield_scan` and `shield_audit` as registered tools to proactively assess threats and query the audit log.
 
 ---
 
@@ -53,11 +53,11 @@ The demo runs on a Hetzner CX43 server with Caddy as reverse proxy (automatic TL
 
 ## Accomplishments we're proud of
 
-- **366 tests passing** — scanner corpus validation, audit log tests, hook integration tests, typoglycemia detection, hex encoding, HTML exfiltration, rate anomaly detection, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, dashboard HTML + routes. TypeScript strict mode, zero `any` types.
+- **406 tests passing** — scanner corpus validation, audit log tests, hook integration tests, typoglycemia detection, hex encoding, HTML exfiltration, rate anomaly detection, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, dashboard HTML + routes. TypeScript strict mode, zero `any` types.
 
 - **OWASP LLM Prompt Injection Prevention alignment** — we implemented defenses from the OWASP cheat sheet that no other OpenClaw security tool covers: typoglycemia detection (scrambled-letter evasion), hex-encoded payload decoding, HTML exfiltration defense (detecting data theft via `<img>`, `<iframe>`, and HTML event handlers pointing to external domains).
 
-- **142+ detection patterns** across 16 categories, with base64, hex, and ROT13 decoding as pre-processing layers. The scanner catches attacks that bypass simple string matching.
+- **180+ detection patterns** across 16 categories, with base64, hex, and ROT13 decoding as pre-processing layers. The scanner catches attacks that bypass simple string matching.
 
 - **Fail-open design** — every hook is wrapped in `safeHandler()`. If the plugin encounters an error, the agent keeps working. Security should be a safety net, not a single point of failure.
 
@@ -105,7 +105,7 @@ The demo runs on a Hetzner CX43 server with Caddy as reverse proxy (automatic TL
 - Node.js 24
 - pnpm
 - OpenClaw Plugin SDK
-- Vitest (366 tests)
+- Vitest (406 tests)
 - Tailwind CSS (inline, no build step)
 - Server-Sent Events (real-time dashboard)
 - Caddy (reverse proxy, automatic TLS)

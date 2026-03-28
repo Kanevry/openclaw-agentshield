@@ -6,19 +6,19 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 # Security Scanner Patterns
 
 ## Summary (verifiziert 28.03.2026, Session F)
-- **165+ Detection Patterns** (178+ total primitives): 68 injection (50 EN + 18 DE) + 15 exec + 6 write + 22 sensitive data + 7 PII + 15 base64/hex/rot13 keywords (11 EN + 4 DE) + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 4 HTML exfil (incl. comment injection) + TOOL_RISK_MAP
-- **16 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
-- **391 Tests** (5 test files), **70 Attack Corpus Cases**
+- **180+ Detection Patterns** (180 total primitives): 76 injection (50 EN + 26 DE) + 15 exec + 6 write + 22 sensitive data + 7 PII + 15 base64/hex/rot13 keywords (11 EN + 4 DE) + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 4 HTML exfil (incl. comment injection) + TOOL_RISK_MAP
+- **16 Detection Techniques** (conceptual), **8 ScanCategory values** in code: injection, exfiltration, tool-abuse, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
+- **406 Tests** (6 test files), **70 Attack Corpus Cases**
 - **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
 - **ReDoS-Schutz**: Alle Regex verwenden lazy `[^\n]*?` statt greedy `.*`
 - **Glob-Escaping**: `escapeRegExp()` vor Glob→Regex Konvertierung in allowedExecPatterns
-- **4 Security Headers**: CSP (unsafe-inline for Tailwind CDN compatibility, frame-ancestors 'none', base-uri 'self', object-src 'none'), X-Content-Type-Options (nosniff), X-Frame-Options (DENY), Referrer-Policy (strict-origin-when-cross-origin)
+- **6 Security Headers**: CSP (unsafe-inline for Tailwind CDN compatibility, frame-ancestors 'none', base-uri 'self', object-src 'none'), X-Content-Type-Options (nosniff), X-Frame-Options (DENY), Referrer-Policy (strict-origin-when-cross-origin), Strict-Transport-Security (HSTS, max-age=31536000), Permissions-Policy (camera=(), microphone=(), geolocation=())
 
 ## Detection Categories
 
-### 1. Prompt Injection (scanForInjection) — 68 patterns (50 EN + 18 DE)
+### 1. Prompt Injection (scanForInjection) — 76 patterns (50 EN + 26 DE)
 - Instruction Override: "ignore previous instructions", "disregard", "new instructions:"
 - Identity Manipulation: "you are now", "act as", "pretend to be"
 - Credential Extraction: "forward secrets", "exfiltrate", "send me your api key"
@@ -38,7 +38,7 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - process.env., import from 'child_process'
 - <script> tags, embedded injection payloads
 
-### 4. Sensitive Data Detection (scanForSensitiveData) — 22 Patterns
+### 4. Sensitive Data Detection (scanForSensitiveData) — 29 Patterns
 - AWS Keys: AKIA[0-9A-Z]{16}
 - JWT Tokens: eyJ...[base64].[base64].[base64]
 - Private Keys: -----BEGIN (RSA )?PRIVATE KEY-----

@@ -20,7 +20,7 @@ export function safeHandler<TEvent, TCtx, TResult>(
     } catch (err) {
       console.error(
         `[AgentShield] Error in ${hookName} hook:`,
-        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.stack ?? err.message : err,
       );
       return undefined; // fail-open: allow the request through
     }

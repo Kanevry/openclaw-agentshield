@@ -165,6 +165,20 @@ describe("AgentShield Dashboard Routes", () => {
       expect(res.getHeaders()["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     });
 
+    it("includes Strict-Transport-Security header", () => {
+      const req = createMockReq("/agentshield");
+      const res = createMockRes();
+      handler(req, res);
+      expect(res.getHeaders()["strict-transport-security"]).toBe("max-age=31536000; includeSubDomains");
+    });
+
+    it("includes Permissions-Policy header", () => {
+      const req = createMockReq("/agentshield");
+      const res = createMockRes();
+      handler(req, res);
+      expect(res.getHeaders()["permissions-policy"]).toBe("camera=(), microphone=(), geolocation=()");
+    });
+
     it("returns HTML body with AgentShield title", () => {
       const req = createMockReq("/agentshield");
       const res = createMockRes();

@@ -17,7 +17,7 @@ Agent Response ──→ message_sending hook ──→ Leakage + data check
                                             │
                                     ┌───────┴───────┐
                                     │  Core Scanner  │
-                                    │ 142+ patterns  │
+                                    │ 180+ patterns  │
                                     │  Base64 decode │
                                     │  Hex decode    │
                                     │  Unicode norm  │
@@ -165,7 +165,7 @@ Base64, hex, and ROT13-encoded variants of all injection patterns are also detec
 pnpm install
 pnpm run typecheck    # TypeScript strict mode
 pnpm run test         # Vitest
-pnpm run test:scanner # Attack corpus validation (366 tests)
+pnpm run test:scanner # Attack corpus validation (406 tests)
 ```
 
 ### Project Structure
@@ -176,7 +176,7 @@ src/
 ├── hooks/
 │   └── safe-handler.ts   Fail-open error wrapper
 ├── lib/
-│   ├── scanner.ts        Core scanner (142+ patterns, base64, hex, ROT13, unicode, typo, PII)
+│   ├── scanner.ts        Core scanner (180+ patterns, base64, hex, ROT13, unicode, typo, PII)
 │   ├── scanner.types.ts  Type definitions
 │   ├── audit-log.ts      Ring buffer + SSE emitter
 │   ├── dashboard.ts      Dashboard HTML generation
@@ -185,7 +185,7 @@ src/
 └── types/
     └── openclaw.d.ts     OpenClaw Plugin SDK types
 tests/
-├── attack-corpus.json    60 test cases
+├── attack-corpus.json    70 test cases
 ├── validate-scanner.ts   Corpus runner
 ├── scanner.test.ts       Scanner unit tests
 ├── hooks.test.ts         Hook integration tests

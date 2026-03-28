@@ -306,7 +306,7 @@
 
     .hooks-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
 
@@ -659,15 +659,15 @@
     <!-- Stats -->
     <div class="stats-bar animate-in delay-5">
       <div class="stat">
-        <div class="stat-value">74</div>
+        <div class="stat-value">165+</div>
         <div class="stat-label">Patterns</div>
       </div>
       <div class="stat">
-        <div class="stat-value">3</div>
+        <div class="stat-value">4</div>
         <div class="stat-label">Hooks</div>
       </div>
       <div class="stat">
-        <div class="stat-value">125</div>
+        <div class="stat-value">406</div>
         <div class="stat-label">Tests</div>
       </div>
       <div class="stat">
@@ -679,10 +679,10 @@
     <!-- Hooks -->
     <section class="hooks-section" id="hooks">
       <div class="section-label">Defense Layers</div>
-      <div class="section-title">Three hooks. Full coverage.</div>
+      <div class="section-title">Four hooks. Full coverage.</div>
       <div class="section-desc">
-        AgentShield intercepts messages, tool calls, and tool results in real-time.
-        Block threats before they reach the model.
+        AgentShield intercepts messages, tool calls, tool results, and outgoing responses in real-time.
+        Block threats before they reach the model — and after.
       </div>
       <div class="hooks-grid">
         <div class="hook-card">
@@ -712,6 +712,15 @@
             attacks smuggled through file reads, web fetches, and API responses.
           </div>
         </div>
+        <div class="hook-card">
+          <div class="hook-icon">&#x1f4e4;</div>
+          <div class="hook-name">message_sending</div>
+          <div class="hook-title">Output Monitoring</div>
+          <div class="hook-desc">
+            Scans outgoing agent responses for prompt leakage, sensitive data,
+            and injection artifacts. Configurable blocking via blockOutbound.
+          </div>
+        </div>
       </div>
     </section>
 
@@ -719,20 +728,22 @@
     <section class="scanner-section" id="scanner">
       <div class="scanner-info">
         <div class="section-label">Detection Engine</div>
-        <div class="section-title">74 attack patterns</div>
+        <div class="section-title">165+ attack patterns</div>
         <div class="section-desc">
-          Battle-tested scanner with base64 decoding, unicode normalization,
-          and context-aware severity scoring.
+          Battle-tested scanner with base64/hex/ROT13 decoding, unicode normalization,
+          typoglycemia detection, and context-aware severity scoring. Multilingual (EN+DE).
         </div>
         <ul class="pattern-list">
           <li>Instruction override &amp; jailbreak</li>
-          <li>Identity manipulation</li>
-          <li>Credential extraction</li>
+          <li>Identity manipulation &amp; system prompt extraction</li>
+          <li>Credential extraction &amp; 22 API key patterns</li>
           <li>Markup injection ([SYSTEM], &lt;|im_start|&gt;)</li>
-          <li>Base64 &amp; unicode obfuscation</li>
-          <li>Data exfiltration (curl, wget, nc)</li>
-          <li>Destructive commands (rm, chmod, dd)</li>
-          <li>Code injection (eval, exec, child_process)</li>
+          <li>Base64, Hex, ROT13 &amp; Unicode obfuscation</li>
+          <li>Typoglycemia detection (OWASP-recommended)</li>
+          <li>HTML &amp; Markdown exfiltration</li>
+          <li>SSRF &amp; Path Traversal prevention</li>
+          <li>PII detection (credit cards, IBAN, SSN, email)</li>
+          <li>OWASP LLM05 Tool Risk Classification</li>
         </ul>
       </div>
       <div class="terminal">

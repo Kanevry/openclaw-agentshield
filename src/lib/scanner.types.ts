@@ -10,7 +10,6 @@ export type ScanCategory =
   | "injection"
   | "exfiltration"
   | "tool-abuse"
-  | "phishing"
   | "rate-anomaly"
   | "markdown-exfil"
   | "ssrf"

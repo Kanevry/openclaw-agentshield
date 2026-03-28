@@ -232,7 +232,7 @@ describe("AuditLog", () => {
       expect(stats.warned).toBe(0);
       expect(stats.allowed).toBe(0);
       expect(stats.bySeverity).toEqual({ none: 0, low: 0, medium: 0, high: 0, critical: 0 });
-      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, "markdown-exfil": 0, ssrf: 0, "path-traversal": 0, none: 0 });
+      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, "rate-anomaly": 0, "markdown-exfil": 0, ssrf: 0, "path-traversal": 0, none: 0 });
     });
 
     it("correctly counts totalScanned", () => {
@@ -278,14 +278,14 @@ describe("AuditLog", () => {
       log.add(makeEntry({ category: "injection" }));
       log.add(makeEntry({ category: "exfiltration" }));
       log.add(makeEntry({ category: "tool-abuse" }));
-      log.add(makeEntry({ category: "phishing" }));
+      log.add(makeEntry({ category: "rate-anomaly" }));
       log.add(makeEntry({ category: "none" }));
 
       const stats = log.getStats();
       expect(stats.byCategory.injection).toBe(2);
       expect(stats.byCategory.exfiltration).toBe(1);
       expect(stats.byCategory["tool-abuse"]).toBe(1);
-      expect(stats.byCategory.phishing).toBe(1);
+      expect(stats.byCategory["rate-anomaly"]).toBe(1);
       expect(stats.byCategory.none).toBe(1);
     });
   });

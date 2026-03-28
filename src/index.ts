@@ -377,9 +377,12 @@ export default {
         const { message } = event;
         if (message.role !== "assistant") return;
 
+        const content = asString(message.content);
+        if (!content) return;
+
         const config = ctx.config;
-        const result = scanForInjection(message.content);
-        const sensitiveResult = scanForSensitiveData(message.content);
+        const result = scanForInjection(content);
+        const sensitiveResult = scanForSensitiveData(content);
 
         if (result.detected || sensitiveResult.detected) {
           const combined = result.detected ? result : sensitiveResult;
@@ -583,6 +586,8 @@ export default {
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("X-Frame-Options", "DENY");
         res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         res.end(getDashboardHtml());
         } catch (err) {
           console.error("[AgentShield] Dashboard route error:", err);

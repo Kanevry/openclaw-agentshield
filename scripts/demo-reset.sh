@@ -13,10 +13,25 @@
 
 set -euo pipefail
 
-SERVER="188.245.81.195"
-REMOTE_USER="root"
-GATEWAY_TOKEN="REDACTED_TOKEN"
-GATEWAY_PORT=18789
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${SCRIPT_DIR}/../.env.local"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: .env.local not found. Create it with GATEWAY_TOKEN=<token>"
+  exit 1
+fi
+
+# shellcheck source=/dev/null
+source "$ENV_FILE"
+
+SERVER="${SERVER:-188.245.81.195}"
+REMOTE_USER="${REMOTE_USER:-root}"
+GATEWAY_PORT="${GATEWAY_PORT:-18789}"
+
+if [ -z "${GATEWAY_TOKEN:-}" ]; then
+  echo "ERROR: GATEWAY_TOKEN not set in .env.local"
+  exit 1
+fi
 
 echo "=== AgentShield Demo Reset ==="
 echo "Server: ${REMOTE_USER}@${SERVER}"

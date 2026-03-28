@@ -156,7 +156,7 @@ const EXEC_DANGER_PATTERNS: readonly RegExp[] = [
   /\brm\s+-[rf]{1,2}\s+~\//i,
   /\bchmod\s+777\b/i,
   /\bchmod\s+\+[sx]\b/i,
-  /\beval\b[^\n]*\$/i,
+  /\beval\b[^\n]*?\$/i,
   /\benv\b|\bprintenv\b/i,
   /\becho\s+\$[A-Z_]+/i,
   /\|\s*nc\s+/i,
@@ -467,7 +467,7 @@ const HTML_EXFIL_PATTERNS: readonly RegExp[] = [
   /<(?:img|svg|iframe|video|audio|source|embed|object)\b[^>]+\bon\w+\s*=/i,
   /<iframe\b[^>]+\bsrc\s*=\s*["'][^"']*https?:\/\/[^"']+/i,
   // HTML comment injection — hidden instructions in comments
-  /<!--[^]*?(?:system|admin|instruction|ignore|reveal|execute|exfiltrate|prompt|anweisung)[^]*?-->/i,
+  /<!--[\s\S]{0,500}?(?:system|admin|instruction|ignore|reveal|execute|exfiltrate|prompt|anweisung)[\s\S]{0,500}?-->/i,
 ] as const;
 
 export function scanForHtmlExfiltration(text: string): ScanResult {
@@ -701,6 +701,7 @@ export function isBlockedUrl(
   url: string,
   blockedDomains: string[] = [],
 ): boolean {
+  if (url.length > MAX_SCAN_LENGTH) return false;
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
@@ -728,6 +729,22 @@ function isAllowedExec(command: string, patterns: string[]): boolean {
   });
 }
 
+// ── Pattern Counts (SSOT — validated by tests/ssot-counts.test.ts) ──
+
+export const PATTERN_COUNTS = {
+  injection: INJECTION_PATTERNS.length,
+  highSeverity: HIGH_SEVERITY_PATTERNS.length,
+  exec: EXEC_DANGER_PATTERNS.length,
+  write: WRITE_DANGER_PATTERNS.length,
+  sensitive: SENSITIVE_DATA_PATTERNS.length,
+  htmlExfil: HTML_EXFIL_PATTERNS.length,
+  markdownExfil: MARKDOWN_EXFIL_PATTERNS.length,
+  ssrf: SSRF_PATTERNS.length,
+  pathTraversal: PATH_TRAVERSAL_PATTERNS.length,
+  obfuscationKeywords: OBFUSCATION_KEYWORDS.length,
+  typoglycemiaTargets: TYPOGLYCEMIA_TARGETS.length,
+} as const;
+
 // ── Comprehensive Scan ───────────────────────────────────────────────
 
 /**
@@ -742,6 +759,9 @@ export function fullScan(
   context?: { type: "exec" | "write" | "read" | "message" | "general" },
   config?: { allowedExecPatterns?: string[]; blockedDomains?: string[] },
 ): ScanResult {
+  if (text.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
   // Always check for injection
   const injectionResult = scanForInjection(text);
   if (injectionResult.severity === "critical") return injectionResult;
