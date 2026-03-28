@@ -12,6 +12,9 @@ export type ScanCategory =
   | "tool-abuse"
   | "phishing"
   | "rate-anomaly"
+  | "markdown-exfil"
+  | "ssrf"
+  | "path-traversal"
   | "none";
 
 export interface ScanResult {

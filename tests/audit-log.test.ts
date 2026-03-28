@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { AuditLog } from "../src/lib/audit-log.js";
 import type { AuditEntry } from "../src/lib/scanner.types.js";
 
@@ -232,7 +232,7 @@ describe("AuditLog", () => {
       expect(stats.warned).toBe(0);
       expect(stats.allowed).toBe(0);
       expect(stats.bySeverity).toEqual({ none: 0, low: 0, medium: 0, high: 0, critical: 0 });
-      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, none: 0 });
+      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, "markdown-exfil": 0, ssrf: 0, "path-traversal": 0, none: 0 });
     });
 
     it("correctly counts totalScanned", () => {

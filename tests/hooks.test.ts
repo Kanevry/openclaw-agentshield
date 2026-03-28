@@ -10,7 +10,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import plugin from "../src/index.js";
 import type {
-  AgentMessage,
   BeforeToolCallEvent,
   BeforeToolCallResult,
   MessageReceivedEvent,
@@ -272,7 +271,19 @@ describe("AgentShield Plugin", () => {
       expect(result).toBeUndefined();
     });
 
-    it("unrecognized tool — returns undefined (allow)", () => {
+    it("unrecognized tool with safe path — returns undefined (allow)", () => {
+      const handler = mock.hooks.get("before_tool_call")!;
+      const event: BeforeToolCallEvent = {
+        toolName: "read_file",
+        params: { path: "/home/user/documents/report.txt" },
+      };
+
+      const result = handler(event, strictConfig) as BeforeToolCallResult | undefined;
+
+      expect(result).toBeUndefined();
+    });
+
+    it("unrecognized tool with sensitive path — blocks in strictMode", () => {
       const handler = mock.hooks.get("before_tool_call")!;
       const event: BeforeToolCallEvent = {
         toolName: "read_file",
@@ -281,7 +292,8 @@ describe("AgentShield Plugin", () => {
 
       const result = handler(event, strictConfig) as BeforeToolCallResult | undefined;
 
-      expect(result).toBeUndefined();
+      expect(result?.block).toBe(true);
+      expect(result?.blockReason).toMatch(/path traversal/i);
     });
 
     it("allowed exec pattern — returns undefined even for dangerous-looking command", () => {

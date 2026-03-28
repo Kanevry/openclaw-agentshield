@@ -72,7 +72,7 @@ export default {
 - Prompt Injection: offiziell **out of scope** per OpenClaw Security Policy
 - Konkurrenz existiert: ClawSec, OpenClaw Shield, SecureClaw, openclaw-security-monitor
 - Unser Framing: "OWASP-aligned Real-time Blocking + Live Dashboard" (NICHT "erstes Security-Tool")
-- 4 Hooks, 108+ Patterns, 176 Tests, 41 Corpus Cases, OWASP LLM Prompt Injection Prevention aligned
+- 4 Hooks, 2 Tools, 4 Routes, 130+ Patterns, 341 Tests, 60 Corpus Cases, 14 Detection Categories, OWASP LLM Prompt Injection Prevention aligned
 
 ## Referenz-Dateien
 
@@ -89,6 +89,6 @@ export default {
 
 | Snippet | Herkunft | Zweck |
 |---------|----------|-------|
-| `snippets/security-scanner.ts` | BitGN-Hackathron | Original Scanner (evolved to 108+ patterns in src/lib/scanner.ts) |
+| `snippets/security-scanner.ts` | BitGN-Hackathron | Original Scanner (evolved to 130+ patterns in src/lib/scanner.ts) |
 | `snippets/retry.ts` | BitGN-Hackathron | Exponential Backoff mit Jitter |
 | `snippets/circuit-breaker.ts` | Clank Event Bus | Circuit Breaker (stripped) |

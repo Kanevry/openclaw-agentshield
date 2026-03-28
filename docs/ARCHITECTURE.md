@@ -24,11 +24,13 @@
 │  │  └─────┬──────┘ └─────┬─────┘ └────┬─────┘ └────┬────┘│    │
 │  │        │              │             │             │      │    │
 │  │  ┌─────┴──────────────┴─────────────┴─────────────┴───┐ │    │
-│  │  │          Core Scanner Module (108+ Patterns)       │  │    │
+│  │  │          Core Scanner Module (130+ Patterns)       │  │    │
 │  │  │  scanForInjection() | scanExecCommand()           │  │    │
 │  │  │  scanWriteContent() | isBlockedUrl()              │  │    │
 │  │  │  scanForHtmlExfiltration() | checkTypoglycemia()  │  │    │
 │  │  │  checkHexInjections() | checkRateAnomaly()        │  │    │
+│  │  │  scanForMarkdownExfiltration() | checkRot13()     │  │    │
+│  │  │  checkSsrfPatterns() | scanForPathTraversal()     │  │    │
 │  │  │  Base64 Decode | Unicode Normalize                │  │    │
 │  │  └──────────────────────┬────────────────────────────┘ │    │
 │  │                         │                              │    │
@@ -166,13 +168,17 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 ## Features
 
 - **4 Hook Points:** `message_received`, `before_tool_call`, `tool_result_persist`, `message_sending`
-- **108+ Detection Patterns** in 7 Kategorien:
+- **130+ Detection Patterns** in 11 Kategorien:
   - Prompt Injection (Instruction Override, Identity Manipulation, Credential Extraction, Markup Injection)
   - Tool Call Abuse (Data Exfiltration, Destructive Commands, Env Leaking, Code Injection)
   - Write Content Abuse (eval, exec, child_process, script tags)
   - HTML Exfiltration (External img/iframe src, HTML event handlers on media/embed tags)
+  - Markdown Exfiltration (versteckte Links, Bild-URLs mit Query-Exfil, Referenz-Link Tricks)
+  - SSRF Detection (interne IP-Bereiche, Cloud Metadata Endpoints, DNS Rebinding Patterns)
+  - Path Traversal (../../../etc/passwd, encoded traversal, null-byte injection)
   - Typoglycemia Detection (scrambled middle letters, OWASP-recommended)
   - Hex-encoded Injection Payloads
+  - ROT13-encoded Injection Payloads
   - System Prompt Extraction (8 patterns: "what is your system prompt", "print your system prompt", etc.)
 - **Rate Anomaly Detection:** Erkennung ungewoehnlicher Tool-Call-Frequenzen pro Agent
 - **Base64 Decode + Unicode Normalize** als Pre-Processing
@@ -187,9 +193,10 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 | Datei | Funktion |
 |-------|----------|
 | `src/index.ts` | Plugin Entry, Hook Registration, `checkRateAnomaly()` |
-| `src/lib/scanner.ts` | Core Scanner: `scanForInjection()`, `scanExecCommand()`, `scanWriteContent()`, `isBlockedUrl()`, `scanForHtmlExfiltration()`, `checkTypoglycemia()`, `checkHexInjections()`, `calcSeverity()` (centralized severity calculation) |
+| `src/lib/scanner.ts` | Core Scanner: `scanForInjection()`, `scanExecCommand()`, `scanWriteContent()`, `isBlockedUrl()`, `scanForHtmlExfiltration()`, `scanForMarkdownExfiltration()`, `checkTypoglycemia()`, `checkHexInjections()`, `checkRot13Injections()`, `checkSsrfPatterns()`, `scanForPathTraversal()`, `calcSeverity()` (centralized severity calculation) |
 | `src/lib/scanner.types.ts` | Typen: ScanResult, ScanContext, Severity |
 | `src/lib/audit-log.ts` | Ring Buffer, SSE Emitter, Stats |
+| `src/lib/dashboard.ts` | Dashboard HTML Generation, SSE Event Stream, API Routes |
 | `src/hooks/safe-handler.ts` | Fail-open Wrapper (Plugin darf Gateway nicht crashen) |
 
 ## Config (openclaw.plugin.json)
@@ -211,13 +218,16 @@ openclaw-hack-001/                    ← Arbeitsverzeichnis (lokal)
 
 ## Dashboard Security
 
-- **Content-Security-Policy** Header: `default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'`
+- **Content-Security-Policy** Header mit CSP Nonce: `default-src 'self'; script-src 'nonce-{random}' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'`
+- **X-Content-Type-Options:** `nosniff` (MIME-Sniffing Prevention)
+- **X-Frame-Options:** `DENY` (Clickjacking Prevention)
 - Gateway Auth (`auth: "gateway"`) mit Caddy `request_header Authorization` injection fuer public access
 
 ## Tests
 
-- **159 Tests** (Vitest)
+- **341 Tests** (Vitest)
 - Scanner, Hooks, Audit Log, Rate Anomaly, Edge Cases
+- Markdown Exfiltration, SSRF, Path Traversal, ROT13, Security Headers
 
 ## Wie Clank von AgentShield profitiert
 

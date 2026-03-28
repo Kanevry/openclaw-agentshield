@@ -30,9 +30,11 @@ import type {
   ToolResultPersistResult,
   PluginContext,
 } from "./types/openclaw.js";
-import { scanForInjection, scanExecCommand, scanWriteContent, scanForSensitiveData, isBlockedUrl, fullScan } from "./lib/scanner.js";
+import { scanForInjection, scanExecCommand, scanWriteContent, scanForSensitiveData, scanForPathTraversal, checkSsrfPatterns, isBlockedUrl, fullScan } from "./lib/scanner.js";
 import { AuditLog } from "./lib/audit-log.js";
 import { safeHandler } from "./hooks/safe-handler.js";
+import { getDashboardHtml } from "./lib/dashboard.js";
+import { randomUUID } from "node:crypto";
 
 // ── Type Guards ──────────────────────────────────────────────────────
 
@@ -67,6 +69,7 @@ function asScanContext(val: unknown): ScanContext | undefined {
 const TRUNCATE_LENGTH = 100;
 const SSE_HEARTBEAT_MS = 15_000;
 const DEFAULT_RATE_LIMIT = 30;
+const AUDIT_LOG_CAPACITY = 1_000;
 
 // ── Outcome Helper ──────────────────────────────────────────────────
 
@@ -84,7 +87,7 @@ function getOutcome(
 
 // ── Shared State ─────────────────────────────────────────────────────
 
-const auditLog = new AuditLog(1000);
+const auditLog = new AuditLog(AUDIT_LOG_CAPACITY);
 const toolCallTimestamps: number[] = [];
 
 // ── Rate Anomaly Detection ──────────────────────────────────────────
@@ -219,26 +222,55 @@ export default {
             }
           }
 
-          // URL/browser scanning — domain blocklist
+          // URL/browser scanning — domain blocklist + SSRF detection
           if (toolName === "browser" || toolName === "web_fetch") {
             const url = asString(params.url);
             const blocked = isBlockedUrl(url, config.blockedDomains);
+            const ssrfResult = checkSsrfPatterns(url);
 
+            const urlDetected = blocked || ssrfResult.detected;
             auditLog.add({
               hook: "before_tool_call",
               toolName,
-              severity: blocked ? "high" : "none",
-              category: blocked ? "exfiltration" : "none",
-              patterns: blocked ? ["blocked-domain"] : [],
-              outcome: getOutcome(blocked, "before_tool_call", config.strictMode),
+              severity: ssrfResult.detected ? ssrfResult.severity : blocked ? "high" : "none",
+              category: ssrfResult.detected ? "ssrf" : blocked ? "exfiltration" : "none",
+              patterns: ssrfResult.detected ? ssrfResult.patterns : blocked ? ["blocked-domain"] : [],
+              outcome: getOutcome(urlDetected, "before_tool_call", config.strictMode),
               details: `Browser/fetch: ${url.slice(0, TRUNCATE_LENGTH)}`,
             });
 
-            if (blocked && config.strictMode) {
+            if (urlDetected && config.strictMode) {
               return {
                 block: true,
-                blockReason: `AgentShield: Blocked domain in URL — ${url.slice(0, TRUNCATE_LENGTH)}`,
+                blockReason: ssrfResult.detected
+                  ? `AgentShield: SSRF detected — ${ssrfResult.patterns.join(", ")}`
+                  : `AgentShield: Blocked domain in URL — ${url.slice(0, TRUNCATE_LENGTH)}`,
               };
+            }
+          }
+
+          // Path traversal check for file operations
+          const filePath = asString(params.path) || asString(params.file_path) || asString(params.filename);
+          if (filePath) {
+            const pathResult = scanForPathTraversal(filePath);
+
+            if (pathResult.detected) {
+              auditLog.add({
+                hook: "before_tool_call",
+                toolName,
+                severity: pathResult.severity,
+                category: pathResult.category,
+                patterns: pathResult.patterns,
+                outcome: getOutcome(true, "before_tool_call", config.strictMode),
+                details: `Path traversal: ${filePath.slice(0, TRUNCATE_LENGTH)}`,
+              });
+
+              if (config.strictMode) {
+                return {
+                  block: true,
+                  blockReason: `AgentShield: Path traversal detected — ${pathResult.patterns.join(", ")}`,
+                };
+              }
             }
           }
 
@@ -430,22 +462,33 @@ export default {
       auth: "gateway",
       match: "prefix",
       handler: (req, res) => {
-        console.log(`[AgentShield] HTTP ${req.method} ${req.url}`);
-        const url = req.url ?? "";
+        try {
+        console.debug(`[AgentShield] HTTP ${req.method} ${req.url}`);
+        let pathname: string;
+        try {
+          pathname = new URL(req.url ?? "", "http://localhost").pathname;
+        } catch {
+          pathname = req.url ?? "";
+        }
 
         // SSE stream
-        if (url.includes("/agentshield/events")) {
+        if (pathname === "/agentshield/events") {
           res.setHeader("Content-Type", "text/event-stream");
           res.setHeader("Cache-Control", "no-cache");
           res.setHeader("Connection", "keep-alive");
 
           const unsubscribe = auditLog.subscribe((entry) => {
-            try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch { /* client disconnected */ }
+            try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch {
+              console.debug("[AgentShield] SSE write failed (client disconnected)");
+            }
           });
 
           // Heartbeat to keep connection alive through proxies
           const heartbeat = setInterval(() => {
-            try { res.write(`: heartbeat\n\n`); } catch { clearInterval(heartbeat); }
+            try { res.write(`: heartbeat\n\n`); } catch {
+              console.debug("[AgentShield] SSE heartbeat failed (client disconnected)");
+              clearInterval(heartbeat);
+            }
           }, SSE_HEARTBEAT_MS);
 
           res.write(`event: stats\ndata: ${JSON.stringify(auditLog.getStats())}\n\n`);
@@ -458,7 +501,7 @@ export default {
         }
 
         // JSON API: audit log
-        if (url.includes("/agentshield/api/audit")) {
+        if (pathname === "/agentshield/api/audit") {
           res.setHeader("Content-Type", "application/json");
           const entries = auditLog.getEntries({ limit: 100 });
           res.end(JSON.stringify(entries));
@@ -466,194 +509,34 @@ export default {
         }
 
         // JSON API: stats
-        if (url.includes("/agentshield/api/stats")) {
+        if (pathname === "/agentshield/api/stats") {
           res.setHeader("Content-Type", "application/json");
           res.end(JSON.stringify(auditLog.getStats()));
           return;
         }
 
-        // Default: HTML dashboard
+        // Default: HTML dashboard with CSP nonce
+        const nonce = randomUUID();
         res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'");
-        res.end(getDashboardHtml());
+        res.setHeader("Content-Security-Policy",
+          `default-src 'self'; script-src 'nonce-${nonce}' https://cdn.tailwindcss.com; style-src 'nonce-${nonce}' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`);
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("X-Frame-Options", "DENY");
+        res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        res.end(getDashboardHtml(nonce));
+        } catch (err) {
+          console.error("[AgentShield] Dashboard route error:", err);
+          if (!res.headersSent) {
+            res.setHeader("Content-Type", "text/plain");
+            res.statusCode = 500;
+            res.end("Internal Server Error");
+          }
+        }
       },
     });
 
-    console.log("[AgentShield] Plugin registered — 4 hooks, 2 tools, 4 routes");
+    console.debug("[AgentShield] Plugin registered — 4 hooks, 2 tools, 4 routes");
   },
 };
 
-// ── Dashboard HTML (Minimal, Tailwind CDN) ───────────────────────────
-
-function getDashboardHtml(): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AgentShield Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
-  </style>
-</head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    <header class="flex items-center justify-between mb-8">
-      <div class="flex items-center gap-3">
-        <div class="w-3 h-3 bg-green-500 rounded-full pulse-dot" id="status-dot"></div>
-        <h1 class="text-2xl font-bold tracking-tight">AgentShield</h1>
-        <span class="text-sm text-gray-500">Security Dashboard</span>
-      </div>
-      <span class="text-xs text-gray-600" id="uptime">Connected</span>
-    </header>
-
-    <div class="grid grid-cols-4 gap-4 mb-8" id="stats">
-      <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
-        <div class="text-xs text-gray-500 uppercase tracking-wider">Scanned</div>
-        <div class="text-3xl font-mono font-bold mt-1" id="stat-total">0</div>
-      </div>
-      <div class="bg-gray-900 rounded-lg p-4 border border-red-900/30">
-        <div class="text-xs text-red-400 uppercase tracking-wider">Blocked</div>
-        <div class="text-3xl font-mono font-bold text-red-400 mt-1" id="stat-blocked">0</div>
-      </div>
-      <div class="bg-gray-900 rounded-lg p-4 border border-yellow-900/30">
-        <div class="text-xs text-yellow-400 uppercase tracking-wider">Warned</div>
-        <div class="text-3xl font-mono font-bold text-yellow-400 mt-1" id="stat-warned">0</div>
-      </div>
-      <div class="bg-gray-900 rounded-lg p-4 border border-green-900/30">
-        <div class="text-xs text-green-400 uppercase tracking-wider">Allowed</div>
-        <div class="text-3xl font-mono font-bold text-green-400 mt-1" id="stat-allowed">0</div>
-      </div>
-    </div>
-
-    <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-      <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-        <h2 class="font-semibold text-sm">Live Events</h2>
-        <span class="text-xs text-gray-500" id="event-count">0 events</span>
-      </div>
-      <div class="divide-y divide-gray-800/50 max-h-[60vh] overflow-y-auto" id="events">
-        <div class="p-4 text-center text-gray-600 text-sm">Waiting for events...</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const severityColors = {
-      critical: 'text-red-400 bg-red-950',
-      high: 'text-orange-400 bg-orange-950',
-      medium: 'text-yellow-400 bg-yellow-950',
-      low: 'text-blue-400 bg-blue-950',
-      none: 'text-gray-400 bg-gray-800'
-    };
-    const outcomeIcons = { blocked: '\\u26d4', warned: '\\u26a0\\ufe0f', allowed: '\\u2705' };
-
-    let eventCount = 0;
-    const eventsEl = document.getElementById('events');
-    const eventCountEl = document.getElementById('event-count');
-
-    function updateStats(stats) {
-      document.getElementById('stat-total').textContent = stats.totalScanned;
-      document.getElementById('stat-blocked').textContent = stats.blocked;
-      document.getElementById('stat-warned').textContent = stats.warned;
-      document.getElementById('stat-allowed').textContent = stats.allowed;
-    }
-
-    function addEvent(entry) {
-      if (eventCount === 0) eventsEl.innerHTML = '';
-      eventCount++;
-      eventCountEl.textContent = eventCount + ' events';
-
-      const colors = severityColors[entry.severity] || severityColors.none;
-      const icon = outcomeIcons[entry.outcome] || '';
-      const time = new Date(entry.timestamp).toLocaleTimeString();
-
-      const div = document.createElement('div');
-      div.className = 'px-4 py-3 flex items-start gap-3 hover:bg-gray-800/50 transition-colors';
-
-      const iconSpan = document.createElement('span');
-      iconSpan.className = 'text-lg';
-      iconSpan.textContent = icon;
-      div.appendChild(iconSpan);
-
-      const info = document.createElement('div');
-      info.className = 'flex-1 min-w-0';
-
-      const row = document.createElement('div');
-      row.className = 'flex items-center gap-2';
-
-      const timeSpan = document.createElement('span');
-      timeSpan.className = 'text-xs font-mono text-gray-500';
-      timeSpan.textContent = time;
-      row.appendChild(timeSpan);
-
-      const sevSpan = document.createElement('span');
-      sevSpan.className = 'text-xs px-1.5 py-0.5 rounded font-mono ' + colors;
-      sevSpan.textContent = entry.severity.toUpperCase();
-      row.appendChild(sevSpan);
-
-      const hookSpan = document.createElement('span');
-      hookSpan.className = 'text-xs text-gray-500';
-      hookSpan.textContent = entry.hook;
-      row.appendChild(hookSpan);
-
-      if (entry.toolName) {
-        const toolSpan = document.createElement('span');
-        toolSpan.className = 'text-xs text-gray-600';
-        toolSpan.textContent = '(' + entry.toolName + ')';
-        row.appendChild(toolSpan);
-      }
-
-      info.appendChild(row);
-
-      const detailsDiv = document.createElement('div');
-      detailsDiv.className = 'text-sm text-gray-300 mt-1 truncate';
-      detailsDiv.textContent = entry.details;
-      info.appendChild(detailsDiv);
-
-      if (entry.patterns.length > 0) {
-        const patternsDiv = document.createElement('div');
-        patternsDiv.className = 'text-xs text-gray-500 mt-1 font-mono truncate';
-        patternsDiv.textContent = entry.patterns.join(', ');
-        info.appendChild(patternsDiv);
-      }
-
-      div.appendChild(info);
-
-      eventsEl.insertBefore(div, eventsEl.firstChild);
-    }
-
-    const MAX_DOM_EVENTS = 100;
-
-    // SSE Connection
-    const es = new EventSource('/agentshield/events');
-    es.onmessage = (e) => {
-      let entry;
-      try { entry = JSON.parse(e.data); } catch { return; }
-      addEvent(entry);
-      // Cap DOM events
-      while (eventsEl.children.length > MAX_DOM_EVENTS) {
-        eventsEl.removeChild(eventsEl.lastChild);
-      }
-      // Re-fetch stats
-      fetch('/agentshield/api/stats').then(r => r.json()).then(updateStats).catch(() => {
-        document.getElementById('uptime').textContent = 'Stats fetch failed';
-      });
-    };
-    es.addEventListener('stats', (e) => { try { updateStats(JSON.parse(e.data)); } catch { /* malformed stats */ } });
-    es.onopen = () => {
-      document.getElementById('status-dot').className = 'w-3 h-3 bg-green-500 rounded-full pulse-dot';
-      document.getElementById('uptime').textContent = 'Connected';
-    };
-    es.onerror = () => {
-      document.getElementById('status-dot').className = 'w-3 h-3 bg-red-500 rounded-full';
-      document.getElementById('uptime').textContent = 'Disconnected — reconnecting...';
-    };
-
-    // Initial stats
-    fetch('/agentshield/api/stats').then(r => r.json()).then(updateStats).catch(() => {});
-  </script>
-</body>
-</html>`;
-}
+// Dashboard HTML is in src/lib/dashboard.ts

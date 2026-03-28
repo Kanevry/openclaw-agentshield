@@ -664,7 +664,7 @@
     <!-- Stats -->
     <div class="stats-bar animate-in delay-5">
       <div class="stat">
-        <div class="stat-value">108+</div>
+        <div class="stat-value">130+</div>
         <div class="stat-label">Patterns</div>
       </div>
       <div class="stat">
@@ -672,7 +672,7 @@
         <div class="stat-label">Hooks</div>
       </div>
       <div class="stat">
-        <div class="stat-value">170+</div>
+        <div class="stat-value">341</div>
         <div class="stat-label">Tests</div>
       </div>
       <div class="stat">
@@ -733,10 +733,10 @@
     <section class="scanner-section" id="scanner">
       <div class="scanner-info">
         <div class="section-label">Detection Engine</div>
-        <div class="section-title">108+ attack patterns</div>
+        <div class="section-title">130+ attack patterns</div>
         <div class="section-desc">
-          Battle-tested scanner with base64 decoding, hex decoding, unicode normalization,
-          typoglycemia detection (OWASP-recommended), and context-aware severity scoring.
+          Battle-tested scanner with base64 decoding, hex &amp; ROT13 decoding, unicode normalization,
+          typoglycemia detection (OWASP-recommended), SSRF protection, and context-aware severity scoring.
         </div>
         <ul class="pattern-list">
           <li>Instruction override &amp; jailbreak</li>
@@ -745,12 +745,17 @@
           <li>Markup injection ([SYSTEM], &lt;|im_start|&gt;)</li>
           <li>Base64, hex &amp; unicode obfuscation</li>
           <li>Typoglycemia detection (OWASP-recommended)</li>
-          <li>HTML exfiltration defense (img/link tags)</li>
+          <li>HTML &amp; Markdown exfiltration defense</li>
+          <li>ROT13 obfuscation detection</li>
+          <li>SSRF &amp; internal-network detection</li>
+          <li>Path traversal protection</li>
+          <li>22 API key &amp; secret patterns</li>
           <li>Data exfiltration (curl, wget, nc)</li>
           <li>Destructive commands (rm, chmod, dd)</li>
           <li>Code injection (eval, exec, child_process)</li>
           <li>Rate anomaly detection</li>
           <li>System prompt extraction defense</li>
+          <li>CSP nonce-based dashboard security</li>
         </ul>
       </div>
       <div class="terminal">

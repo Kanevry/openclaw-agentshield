@@ -124,7 +124,7 @@ Blocking: before_tool_call + strictMode ODER message_sending + blockOutbound. Al
 ```typescript
 export function calcSeverity(matchCount: number, hasHighSeverity: boolean, baseLevel: "high" | "medium"): Severity
 ```
-Einheitliche Severity ueber alle 5 Scan-Funktionen. baseLevel "high" fuer exec/sensitive, "medium" fuer injection/write/html-exfil.
+Einheitliche Severity ueber alle 9 Scan-Funktionen. baseLevel "high" fuer exec/sensitive/ssrf/path-traversal, "medium" fuer injection/write/html-exfil/markdown-exfil/rot13.
 
 ### SSE Heartbeat fuer Dashboard
 ```typescript
@@ -141,7 +141,7 @@ function checkRateAnomaly(timestamps: number[], threshold: number, windowMs = 60
 ```
 Integriert am Anfang von before_tool_call — cheapest check first.
 
-### New Scanner Functions (verifiziert)
+### New Scanner Functions (verifiziert Session E)
 ```typescript
 // Typoglycemia: scrambled middle letters
 export function checkTypoglycemia(text: string): string[]
@@ -151,7 +151,24 @@ export function checkHexInjections(text: string): string[]
 
 // HTML exfiltration: img/iframe/event handlers
 export function scanForHtmlExfiltration(text: string): ScanResult
+
+// ROT13: decode and scan against obfuscation keywords
+export function checkRot13Injections(text: string): string[]
+
+// Markdown exfiltration: image/link data exfil in Markdown
+export function scanForMarkdownExfiltration(text: string): ScanResult
+
+// SSRF: internal IPs, cloud metadata, dangerous URL schemes
+export function checkSsrfPatterns(text: string): ScanResult
+
+// Path traversal: directory traversal, sensitive files, null bytes
+export function checkPathTraversal(text: string): ScanResult
 ```
+
+### SSRF Integration in before_tool_call
+`checkSsrfPatterns()` is integrated in the `before_tool_call` hook to scan URL parameters
+in tool calls (e.g., web_fetch, curl). Blocks requests to internal IPs, cloud metadata
+endpoints, and dangerous URL schemes. Works alongside `isBlockedUrl()` domain blocklist.
 
 ### DoS-Schutz in Scannern
 `MAX_SCAN_LENGTH = 1_000_000` — Early-Return in allen Scan-Funktionen.

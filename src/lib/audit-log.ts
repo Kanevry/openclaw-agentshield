@@ -76,7 +76,7 @@ export class AuditLog {
       warned: 0,
       allowed: 0,
       bySeverity: { none: 0, low: 0, medium: 0, high: 0, critical: 0 },
-      byCategory: { injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, none: 0 },
+      byCategory: { injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, "markdown-exfil": 0, ssrf: 0, "path-traversal": 0, none: 0 },
     };
 
     for (const entry of this.entries) {

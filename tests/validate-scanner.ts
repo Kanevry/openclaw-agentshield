@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scanForInjection, scanExecCommand, scanWriteContent, fullScan } from "../src/lib/scanner.js";
+import { scanForInjection, scanExecCommand, scanWriteContent } from "../src/lib/scanner.js";
 import type { Severity } from "../src/lib/scanner.types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

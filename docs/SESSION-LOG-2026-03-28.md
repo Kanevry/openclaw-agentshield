@@ -55,7 +55,7 @@
 
 | Komponente | Status | URL/Details |
 |---|---|---|
-| Plugin (3 Hooks, 2 Tools, 4 Routes) | LIVE | Server 188.245.81.195 |
+| Plugin (4 Hooks, 2 Tools, 4 Routes) | LIVE | Server 188.245.81.195 |
 | Security Scanner (33/33 Tests) | PASS | `npx tsx tests/validate-scanner.ts` |
 | TypeCheck | PASS | `tsc --noEmit` |
 | Dashboard (public) | LIVE | https://openclaw.gotzendorfer.at/agentshield |

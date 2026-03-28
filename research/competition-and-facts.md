@@ -68,8 +68,8 @@ Stand: 27. März 2026. Alle Claims fact-checked.
 6. **OWASP LLM Prompt Injection Prevention Alignment** — Typoglycemia-Erkennung, Hex-Decoding, HTML-Exfiltration nach OWASP Cheat Sheet
 7. **Output Monitoring** — message_sending Hook scannt Agent-Antworten auf System Prompt Leakage
 8. **Rate Anomaly Detection** — Sliding-Window-Counter erkennt abnormale Tool-Call-Frequenz
-9. **159 Tests** — Von 125 auf 159 Tests erweitert (+34)
-10. **38 Attack Corpus Cases** — Von 33 auf 38 erweitert (+5)
+9. **176 Tests** — Von 125 auf 176 Tests erweitert (+51)
+10. **41 Attack Corpus Cases** — Von 33 auf 41 erweitert (+8)
 
 ### Was wir NICHT behaupten dürfen
 - ~~"Erstes Security-Tool für OpenClaw"~~ → Es gibt mindestens 4

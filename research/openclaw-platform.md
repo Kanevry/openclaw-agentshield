@@ -4,7 +4,7 @@
 
 ## Was ist OpenClaw?
 
-Self-hosted AI Agent Gateway. Verbindet Messaging-Apps (WhatsApp, Telegram, Discord, Slack, Signal, iMessage, etc.) mit AI Coding Agents (Pi Agent). MIT-lizenziert, 247K+ GitHub Stars in 60 Tagen.
+Self-hosted AI Agent Gateway. Verbindet Messaging-Apps (WhatsApp, Telegram, Discord, Slack, Signal, iMessage, etc.) mit AI Coding Agents (Pi Agent). MIT-lizenziert, 337K+ GitHub Stars.
 
 - **Erstellt von:** Peter Steinberger (PSPDFKit Gruender)
 - **Core:** WebSocket Gateway Daemon (`openclaw gateway`)

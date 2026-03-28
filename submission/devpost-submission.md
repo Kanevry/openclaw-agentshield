@@ -21,10 +21,10 @@ We built AgentShield to fill exactly these gaps.
 
 AgentShield is a native OpenClaw plugin that intercepts and analyzes all agent activity across four hooks:
 
-1. **Inbound message scanning** — Detects prompt injection, identity manipulation, credential extraction, and obfuscated payloads (base64, hex, unicode, typoglycemia) in user messages
-2. **Tool call guardrails** — Analyzes exec, write, and browser commands for data exfiltration, destructive operations, and environment leaks. Blocks in strict mode. Includes rate anomaly detection.
-3. **Indirect injection defense** — Scans tool results (file reads, web fetches, API responses) for embedded injection payloads
-4. **Output monitoring** — Scans outbound agent responses for HTML exfiltration, system prompt extraction, and data leaks. Last line of defense.
+1. **Inbound message scanning** — Detects prompt injection, identity manipulation, credential extraction, and obfuscated payloads (base64, hex, unicode, ROT13, typoglycemia) in user messages
+2. **Tool call guardrails** — Analyzes exec, write, and browser commands for data exfiltration, destructive operations, SSRF/internal-network access, path traversal, and environment leaks. Blocks in strict mode. Includes rate anomaly detection.
+3. **Indirect injection defense** — Scans tool results (file reads, web fetches, API responses) for embedded injection payloads and markdown exfiltration attempts
+4. **Output monitoring** — Scans outbound agent responses for HTML/markdown exfiltration, system prompt extraction, sensitive data leaks, and 22 API key/secret patterns (OpenAI, Anthropic, GCP, Stripe, and more). Last line of defense.
 
 Plus a **real-time dashboard** with SSE streaming that shows every scan result live, and two **agent-callable tools** (shield_scan, shield_audit) so the agent can self-assess threats.
 
@@ -32,8 +32,8 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 - **TypeScript** (ESM, strict mode) on **Node 24+**
 - **OpenClaw Plugin SDK** — hooks (api.on), tools (api.registerTool), HTTP routes (api.registerHttpRoute)
-- **Security scanner** with 108+ patterns (37 injection, 15 exec, 6 write, 5 sensitive data, 11 base64, typoglycemia, hex decoding, HTML exfiltration, system prompt extraction), forked from our battle-tested BitGN agent (20/20 security benchmark)
-- **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming
+- **Security scanner** with 130+ patterns across 14 categories (injection, exec abuse, write abuse, sensitive data, base64 decoding, typoglycemia, hex decoding, ROT13 obfuscation, HTML exfiltration, markdown exfiltration, system prompt extraction, SSRF/internal-network detection, path traversal, 22 API key/secret formats), forked from our battle-tested BitGN agent (20/20 security benchmark)
+- **Dashboard** built with Tailwind CSS (CDN), Server-Sent Events for live streaming, CSP nonce-based security (no unsafe-inline), and 5 hardened security headers
 - **Fail-open error handling** — plugin errors never crash the gateway
 - **Ring buffer audit log** (1000 entries) with severity filtering
 - Deployed on Hetzner CX43 with Caddy reverse proxy and automatic TLS
@@ -46,11 +46,12 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 
 ## Accomplishments that we're proud of
 
-- **170+ tests passing** — comprehensive coverage across injection, exec, write, indirect, stealth, obfuscation, and benign scenarios
+- **341 tests passing** — comprehensive coverage across injection, exec, write, indirect, stealth, obfuscation, ROT13, markdown exfiltration, SSRF, path traversal, API key detection, and benign scenarios
 - **Real-time SSE dashboard** — no existing OpenClaw security tool has this
 - **Active blocking via before_tool_call** — context-aware, not just pattern matching on tool names
-- **Base64 + Unicode obfuscation detection** — decodes and scans hidden payloads
-- **Security audit hardened** — fixed XSS, CORS, ReDoS, and regex injection vulnerabilities
+- **Multi-layer obfuscation detection** — base64, hex, unicode, ROT13, and typoglycemia decoding
+- **Security audit hardened** — fixed XSS, CORS, ReDoS, regex injection; added CSP nonces and 5 security headers
+- **60 attack corpus cases** — real-world prompt injection payloads from OWASP and research papers
 - **Full integration test coverage** with type-safe parameter validation
 - **Zero-config deployment** — install the plugin, it protects all agents on the gateway
 
@@ -71,7 +72,8 @@ Plus a **real-time dashboard** with SSE streaming that shows every scan result l
 ## Built With
 - TypeScript
 - Node.js
-- OpenClaw
+- OpenClaw Plugin SDK
+- Zod
 - Tailwind CSS
 - Server-Sent Events
 - Caddy

@@ -81,7 +81,7 @@ Point at the dashboard architecture diagram or use hand gestures to illustrate t
 >
 > "**Four: message_sending.** We scan the agent's own responses to detect accidental system prompt leakage or sensitive data exposure."
 >
-> "Under the hood: 100+ detection patterns, base64 decoding, unicode normalization. Forked from our BitGN agent that scored 20 out of 20 on the security benchmark."
+> "Under the hood: 108+ detection patterns, base64 decoding, unicode normalization. Forked from our BitGN agent that scored 20 out of 20 on the security benchmark."
 >
 > "Plus typoglycemia defense — we catch scrambled-letter evasion attacks that bypass every other tool."
 
@@ -250,7 +250,7 @@ Rapid-fire. Confidence. These are the credibility markers for technical judges.
 
 > "Under the hood:"
 >
-> "**159 tests passing** — scanner corpus, audit log, hook integration, end-to-end. TypeScript strict mode, zero `any` types."
+> "**176 tests passing** — scanner corpus, audit log, hook integration, end-to-end. TypeScript strict mode, zero `any` types."
 >
 > "OWASP LLM Prompt Injection Prevention aligned — typoglycemia, hex encoding, HTML exfiltration detection."
 >
@@ -304,9 +304,9 @@ Slow down. Make eye contact. Deliver the final line with weight.
 
 > The fail-open design means it cannot break your agent. The ring buffer audit log caps memory usage. We fixed our own XSS, CORS, and ReDoS issues. It is as production-ready as a 24-hour hackathon allows — and the architecture is sound for hardening.
 
-### "159 tests — what do they cover?"
+### "176 tests — what do they cover?"
 
-> 33 scanner corpus tests (injection, exec, write, indirect, stealth, benign), 38 audit log tests (ring buffer, filtering, stats), 57 scanner unit tests (every pattern category), typoglycemia and hex encoding tests, HTML exfiltration tests, rate anomaly detection tests, and integration tests for all four hooks with type-safe parameter validation.
+> 41 scanner corpus tests (injection, exec, write, indirect, stealth, benign), 38 audit log tests (ring buffer, filtering, stats), 57 scanner unit tests (every pattern category), typoglycemia and hex encoding tests, HTML exfiltration tests, rate anomaly detection tests, and integration tests for all four hooks with type-safe parameter validation.
 
 ---
 
