@@ -27,8 +27,13 @@ export interface ToolResult {
 
 // ── Hook Event Types ────────────────────────────────────────────────
 
+// Real event format (verified from OpenClaw 2026.3.24 gateway source):
+// { from, content, timestamp, metadata: { to, provider, surface, threadId, senderId, senderName, ... } }
 export interface MessageReceivedEvent {
-  messages: AgentMessage[];
+  from?: string;
+  content?: string;
+  timestamp?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BeforeToolCallEvent {
@@ -73,7 +78,7 @@ export interface AgentShieldConfig {
 export interface OpenClawPluginApi {
   on(
     event: "message_received",
-    handler: (event: MessageReceivedEvent, ctx: PluginContext) => void,
+    handler: (event: Record<string, unknown>, ctx: PluginContext) => void,
   ): void;
   on(
     event: "before_tool_call",
