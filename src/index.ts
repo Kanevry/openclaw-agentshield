@@ -519,7 +519,7 @@ export default {
         const nonce = randomUUID();
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Content-Security-Policy",
-          `default-src 'self'; script-src 'nonce-${nonce}' https://cdn.tailwindcss.com; style-src 'nonce-${nonce}' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`);
+          `default-src 'self'; script-src 'nonce-${nonce}' https://cdn.tailwindcss.com 'unsafe-eval'; style-src 'nonce-${nonce}' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`);
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("X-Frame-Options", "DENY");
         res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
