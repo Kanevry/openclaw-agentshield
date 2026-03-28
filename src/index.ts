@@ -34,7 +34,6 @@ import { scanForInjection, scanExecCommand, scanWriteContent, scanForSensitiveDa
 import { AuditLog } from "./lib/audit-log.js";
 import { safeHandler } from "./hooks/safe-handler.js";
 import { getDashboardHtml } from "./lib/dashboard.js";
-import { randomUUID } from "node:crypto";
 
 // ── Type Guards ──────────────────────────────────────────────────────
 
@@ -515,15 +514,17 @@ export default {
           return;
         }
 
-        // Default: HTML dashboard with CSP nonce
-        const nonce = randomUUID();
+        // Default: HTML dashboard
+        // Note: Tailwind CDN injects dynamic <style>/<script> without nonces,
+        // and CSP Level 2 ignores 'unsafe-inline' when nonce is present.
+        // So we use unsafe-inline/unsafe-eval without nonces for CDN compatibility.
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.setHeader("Content-Security-Policy",
-          `default-src 'self'; script-src 'nonce-${nonce}' https://cdn.tailwindcss.com 'unsafe-eval'; style-src 'nonce-${nonce}' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`);
+          `default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'`);
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("X-Frame-Options", "DENY");
         res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        res.end(getDashboardHtml(nonce));
+        res.end(getDashboardHtml());
         } catch (err) {
           console.error("[AgentShield] Dashboard route error:", err);
           if (!res.headersSent) {

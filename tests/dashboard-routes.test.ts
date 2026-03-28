@@ -131,13 +131,14 @@ describe("AgentShield Dashboard Routes", () => {
       expect(res.getHeaders()["content-type"]).toBe("text/html; charset=utf-8");
     });
 
-    it("includes CSP header with nonce", () => {
+    it("includes CSP header without nonce (Tailwind CDN compatible)", () => {
       const req = createMockReq("/agentshield");
       const res = createMockRes();
       handler(req, res);
       const csp = res.getHeaders()["content-security-policy"];
       expect(csp).toBeDefined();
-      expect(csp).toContain("script-src 'nonce-");
+      expect(csp).toContain("script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'");
+      expect(csp).toContain("style-src 'self' 'unsafe-inline'");
       expect(csp).toContain("frame-ancestors 'none'");
       expect(csp).toContain("base-uri 'self'");
       expect(csp).toContain("object-src 'none'");
@@ -178,7 +179,7 @@ describe("AgentShield Dashboard Routes", () => {
       expect(res.isEnded()).toBe(true);
     });
 
-    it("generates a unique nonce per request", () => {
+    it("returns consistent CSP across requests (no nonce)", () => {
       const req1 = createMockReq("/agentshield");
       const res1 = createMockRes();
       handler(req1, res1);
@@ -189,8 +190,8 @@ describe("AgentShield Dashboard Routes", () => {
 
       const csp1 = res1.getHeaders()["content-security-policy"];
       const csp2 = res2.getHeaders()["content-security-policy"];
-      // Each request should get a different nonce
-      expect(csp1).not.toBe(csp2);
+      // Without nonce, CSP should be identical
+      expect(csp1).toBe(csp2);
     });
 
     it("serves dashboard for unknown sub-paths (fallback)", () => {

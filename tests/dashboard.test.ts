@@ -19,18 +19,8 @@ describe("getDashboardHtml", () => {
     expect(html).toContain('id="events"');
   });
 
-  // Test 3: Nonce appears in script tags when provided
-  it("includes nonce in script tags when provided", () => {
-    const nonce = "test-nonce-123";
-    const html = getDashboardHtml(nonce);
-    expect(html).toContain(`nonce="${nonce}"`);
-    // Should appear in both <script> and <style> tags
-    const nonceCount = (html.match(/nonce="test-nonce-123"/g) || []).length;
-    expect(nonceCount).toBeGreaterThanOrEqual(2); // script + style at minimum
-  });
-
-  // Test 4: No nonce attributes when not provided
-  it("has no nonce attributes when nonce is not provided", () => {
+  // Test 3: No nonce attributes (Tailwind CDN incompatible with CSP nonces)
+  it("has no nonce attributes", () => {
     const html = getDashboardHtml();
     expect(html).not.toContain('nonce=');
   });
@@ -68,12 +58,10 @@ describe("getDashboardHtml", () => {
     expect(innerHTMLUses).toBe(1); // Only the clearing use
   });
 
-  // Test 10: Nonce is different each call (when UUID is used)
-  it("generates valid HTML with different nonces", () => {
-    const html1 = getDashboardHtml("nonce-1");
-    const html2 = getDashboardHtml("nonce-2");
-    expect(html1).toContain("nonce-1");
-    expect(html2).toContain("nonce-2");
-    expect(html1).not.toContain("nonce-2");
+  // Test 10: Generates consistent HTML across calls
+  it("generates consistent HTML across calls", () => {
+    const html1 = getDashboardHtml();
+    const html2 = getDashboardHtml();
+    expect(html1).toBe(html2);
   });
 });

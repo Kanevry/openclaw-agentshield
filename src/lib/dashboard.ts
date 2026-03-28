@@ -1,19 +1,21 @@
 /**
  * Dashboard HTML Template — Extracted from index.ts for testability
  *
- * Generates the AgentShield security dashboard with optional CSP nonce.
+ * Generates the AgentShield security dashboard.
+ * Note: No CSP nonce — Tailwind CDN injects dynamic style/script tags
+ * which are incompatible with nonce-based CSP (CSP Level 2 ignores
+ * 'unsafe-inline' when nonce is present).
  */
 
-export function getDashboardHtml(nonce?: string): string {
-  const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
+export function getDashboardHtml(): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AgentShield Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"${nonceAttr}></script>
-  <style${nonceAttr}>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
     @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
   </style>
@@ -59,7 +61,7 @@ export function getDashboardHtml(nonce?: string): string {
     </div>
   </div>
 
-  <script${nonceAttr}>
+  <script>
     const severityColors = {
       critical: 'text-red-400 bg-red-950',
       high: 'text-orange-400 bg-orange-950',
