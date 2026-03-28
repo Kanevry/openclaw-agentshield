@@ -5,6 +5,12 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 
 # Security Scanner Patterns
 
+## Summary (verifiziert 28.03.2026)
+- **74 Detection Patterns**: 37 injection + 15 exec + 6 write + 5 sensitive data + 11 base64 keywords
+- **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
+- **ReDoS-Schutz**: Alle Regex verwenden lazy `[^\n]*?` statt greedy `.*`
+- **Glob-Escaping**: `escapeRegExp()` vor Glob→Regex Konvertierung in allowedExecPatterns
+
 ## Detection Categories
 
 ### 1. Prompt Injection (scanForInjection)
@@ -26,9 +32,16 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - process.env., import from 'child_process'
 - <script> tags, embedded injection payloads
 
-### 4. URL Blocking (isBlockedUrl)
+### 4. Sensitive Data Detection (scanForSensitiveData)
+- AWS Keys: AKIA[0-9A-Z]{16}
+- JWT Tokens: eyJ...[base64].[base64].[base64]
+- Private Keys: -----BEGIN (RSA )?PRIVATE KEY-----
+- GitHub Tokens: gh[ps]_[A-Za-z0-9_]{36+}
+- Generic API Keys: api_key/secret_key = [20+ chars]
+
+### 5. URL Blocking (isBlockedUrl)
 - Hostname matching against configurable blocklist
-- Subdomain-aware
+- Subdomain-aware (evil.blocked.com matches blocked.com)
 
 ## Severity Logic
 - CRITICAL: 2+ high-severity patterns OR credential extraction

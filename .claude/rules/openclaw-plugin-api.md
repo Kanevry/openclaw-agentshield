@@ -90,3 +90,30 @@ Zugriff via `ctx.config` im Hook-Callback.
 - Plugin laeuft in-process (nicht sandboxed)
 - Fehler im Plugin CRASHEN das Gateway (verifiziert!) — IMMER safeHandler() wrappen
 - Pattern: `safeHandler(hookName, handler)` — fail-open, loggt Fehler, crasht nicht
+
+## Best Practices (verifiziert 28.03.2026)
+
+### Type Guards fuer Hook-Parameter
+```typescript
+function asString(val: unknown, fallback = ""): string
+function asNumber(val: unknown, fallback: number): number
+function asSeverity(val: unknown): FilterSeverity | undefined
+function asScanContext(val: unknown): ScanContext | undefined
+```
+IMMER statt `as string` verwenden — Hook-Events liefern `Record<string, unknown>`.
+
+### Outcome-Logik zentralisieren
+```typescript
+function getOutcome(detected, hook, strictMode?): "blocked" | "warned" | "allowed"
+```
+Nur before_tool_call + strictMode kann blocken. Alle anderen Hooks warnen nur.
+
+### SSE Heartbeat fuer Dashboard
+```typescript
+const heartbeat = setInterval(() => res.write(`: heartbeat\n\n`), 15_000);
+req.on("close", () => { clearInterval(heartbeat); unsubscribe(); });
+```
+Verhindert Proxy-Timeouts bei Caddy/Nginx.
+
+### DoS-Schutz in Scannern
+`MAX_SCAN_LENGTH = 1_000_000` — Early-Return in allen Scan-Funktionen.
