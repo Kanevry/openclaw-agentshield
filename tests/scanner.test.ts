@@ -367,7 +367,7 @@ describe("API key pattern detection", () => {
   // 5. Stripe key (sk_test_, pk_live_, rk_test_)
   it("detects Stripe secret key (sk_test_)", () => {
     const result = scanForSensitiveData(
-      "stripe: sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+      "stripe: sk_test_FAKE00TEST00KEY00SCANNER00" // not a real key
     );
     expect(result.detected).toBe(true);
     expect(result.patterns).toContain("stripe-key");
@@ -383,7 +383,7 @@ describe("API key pattern detection", () => {
 
   it("detects Stripe restricted key (rk_test_)", () => {
     const result = scanForSensitiveData(
-      "rk_test_aBcDeFgHiJkLmNoPqRsT1234"
+      "rk_test_FAKE00TEST00KEY00SCANNER00" // not a real key
     );
     expect(result.detected).toBe(true);
     expect(result.patterns).toContain("stripe-key");
@@ -433,7 +433,7 @@ describe("API key pattern detection", () => {
   // 8. Discord token (M/N prefix, dot-separated segments)
   it("detects Discord bot token", () => {
     const result = scanForSensitiveData(
-      "token: MTIzNDU2Nzg5MDEyMzQ1Njc4OQ.AbCdEf.aBcDeFgHiJkLmNoPqRsTuVwXyZa"
+      "token: NzAwMDAwMDAwMDAwMDAwMDAw.XFAKE0.FAKE00TEST00KEY00SCANNER00TEST" // not a real token
     );
     expect(result.detected).toBe(true);
     expect(result.patterns).toContain("discord-token");
@@ -525,7 +525,7 @@ describe("API key pattern detection", () => {
   // 14. Twilio key (SK followed by 32 hex chars)
   it("detects Twilio API key", () => {
     const result = scanForSensitiveData(
-      "TWILIO_KEY=SK0123456789abcdef0123456789abcdef"
+      "TWILIO_KEY=SKfafafafafafafafafafafafafafafafafa" // not a real key
     );
     expect(result.detected).toBe(true);
     expect(result.patterns).toContain("twilio-key");
