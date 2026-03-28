@@ -1,6 +1,6 @@
 ---
 description: Hackathon context, verified facts, and strategic constraints for OpenClaw Hack_001
-globs: ["**/*"]
+globs: ["docs/**", "README.md", "CLAUDE.md", "submission/**", "landing/**", "ssot/**"]
 ---
 
 # Hackathon Context
@@ -26,9 +26,11 @@ globs: ["**/*"]
 - Real-time Dashboard mit SSE Live Events (keiner hat das)
 - 4 Hooks: aktives Blocking + Output Monitoring, nicht nur Logging
 - OWASP LLM Prompt Injection Prevention aligned
-- 100+ Detection Patterns: Base64 + Hex + Unicode + Typoglycemia + HTML Exfiltration
+- 108+ Detection Patterns: Base64 + Hex + Unicode + Typoglycemia + HTML Exfiltration + System Prompt Extraction
 - Rate Anomaly Detection (sliding window counter)
-- 159 Tests, 38 Attack Corpus Cases
+- Centralized calcSeverity() across all scan functions
+- Configurable outbound blocking (blockOutbound config)
+- 176 Tests, 41 Attack Corpus Cases
 
 ## Naming
 - Plugin: AgentShield

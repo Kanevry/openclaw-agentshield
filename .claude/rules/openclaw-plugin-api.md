@@ -89,7 +89,8 @@ interface AgentShieldConfig {
   allowedExecPatterns: string[];
   blockedDomains: string[];
   dashboard: boolean;
-  rateLimit: number;  // Max tool calls per minute (default: 30)
+  rateLimit: number;       // Max tool calls per minute (default: 30)
+  blockOutbound: boolean;  // Block outbound messages with detected threats (default: false)
 }
 ```
 
@@ -115,9 +116,15 @@ IMMER statt `as string` verwenden — Hook-Events liefern `Record<string, unknow
 
 ### Outcome-Logik zentralisieren
 ```typescript
-function getOutcome(detected, hook, strictMode?): "blocked" | "warned" | "allowed"
+function getOutcome(detected, hook, strictMode?, blockOutbound?): "blocked" | "warned" | "allowed"
 ```
-Nur before_tool_call + strictMode kann blocken. Alle anderen Hooks warnen nur.
+Blocking: before_tool_call + strictMode ODER message_sending + blockOutbound. Alle anderen warnen nur.
+
+### Severity-Berechnung zentralisieren
+```typescript
+export function calcSeverity(matchCount: number, hasHighSeverity: boolean, baseLevel: "high" | "medium"): Severity
+```
+Einheitliche Severity ueber alle 5 Scan-Funktionen. baseLevel "high" fuer exec/sensitive, "medium" fuer injection/write/html-exfil.
 
 ### SSE Heartbeat fuer Dashboard
 ```typescript
