@@ -232,7 +232,7 @@ describe("AuditLog", () => {
       expect(stats.warned).toBe(0);
       expect(stats.allowed).toBe(0);
       expect(stats.bySeverity).toEqual({ none: 0, low: 0, medium: 0, high: 0, critical: 0 });
-      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, none: 0 });
+      expect(stats.byCategory).toEqual({ injection: 0, exfiltration: 0, "tool-abuse": 0, phishing: 0, "rate-anomaly": 0, none: 0 });
     });
 
     it("correctly counts totalScanned", () => {

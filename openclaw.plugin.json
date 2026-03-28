@@ -27,6 +27,12 @@
         "type": "boolean",
         "default": true,
         "description": "Enable the security dashboard HTTP route"
+      },
+      "rateLimit": {
+        "type": "number",
+        "default": 30,
+        "minimum": 1,
+        "description": "Max tool calls per minute before rate anomaly warning/block"
       }
     }
   }

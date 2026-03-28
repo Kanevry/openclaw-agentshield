@@ -41,9 +41,10 @@ api.on("tool_result_persist", (event, ctx) => {
   // return: { message?: AgentMessage } | void
 });
 
-// Ausgehende Nachrichten (optional)
+// Ausgehende Nachrichten scannen (Output Monitoring)
 api.on("message_sending", (event, ctx) => {
-  // return: { cancel?: boolean }
+  // event: { message: AgentMessage }
+  // return: { cancel?: boolean } | void
 });
 ```
 
@@ -82,6 +83,16 @@ da `auth: "gateway"` den Gateway-Token erfordert.
 Plugin config aus `openclaw.plugin.json` configSchema wird automatisch geladen.
 Zugriff via `ctx.config` im Hook-Callback.
 
+```typescript
+interface AgentShieldConfig {
+  strictMode: boolean;
+  allowedExecPatterns: string[];
+  blockedDomains: string[];
+  dashboard: boolean;
+  rateLimit: number;  // Max tool calls per minute (default: 30)
+}
+```
+
 ## Constraints
 
 - ESM: alle imports mit `.js` Extension
@@ -114,6 +125,26 @@ const heartbeat = setInterval(() => res.write(`: heartbeat\n\n`), 15_000);
 req.on("close", () => { clearInterval(heartbeat); unsubscribe(); });
 ```
 Verhindert Proxy-Timeouts bei Caddy/Nginx.
+
+### Rate Anomaly Detection
+```typescript
+// Sliding window counter for tool call frequency
+const toolCallTimestamps: number[] = [];
+function checkRateAnomaly(timestamps: number[], threshold: number, windowMs = 60_000)
+```
+Integriert am Anfang von before_tool_call — cheapest check first.
+
+### New Scanner Functions (verifiziert)
+```typescript
+// Typoglycemia: scrambled middle letters
+export function checkTypoglycemia(text: string): string[]
+
+// Hex encoding: decode and scan
+export function checkHexInjections(text: string): string[]
+
+// HTML exfiltration: img/iframe/event handlers
+export function scanForHtmlExfiltration(text: string): ScanResult
+```
 
 ### DoS-Schutz in Scannern
 `MAX_SCAN_LENGTH = 1_000_000` — Early-Return in allen Scan-Funktionen.

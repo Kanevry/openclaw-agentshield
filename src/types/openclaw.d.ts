@@ -64,6 +64,7 @@ export interface AgentShieldConfig {
   allowedExecPatterns: string[];
   blockedDomains: string[];
   dashboard: boolean;
+  rateLimit: number;
 }
 
 // ── Plugin API ──────────────────────────────────────────────────────

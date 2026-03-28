@@ -6,7 +6,7 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 # Security Scanner Patterns
 
 ## Summary (verifiziert 28.03.2026)
-- **74 Detection Patterns**: 37 injection + 15 exec + 6 write + 5 sensitive data + 11 base64 keywords
+- **100+ Detection Patterns**: 37 injection + 15 exec + 6 write + 5 sensitive data + 11 base64 keywords + Typoglycemia defense, Hex decoding, HTML exfiltration, Rate anomaly, Output monitoring
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
 - **ReDoS-Schutz**: Alle Regex verwenden lazy `[^\n]*?` statt greedy `.*`
 - **Glob-Escaping**: `escapeRegExp()` vor Glob→Regex Konvertierung in allowedExecPatterns
@@ -42,6 +42,34 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 ### 5. URL Blocking (isBlockedUrl)
 - Hostname matching against configurable blocklist
 - Subdomain-aware (evil.blocked.com matches blocked.com)
+
+### 6. Typoglycemia Detection (checkTypoglycemia)
+- OWASP LLM Prompt Injection Prevention Cheat Sheet recommended
+- Fuzzy matching for scrambled middle letters (same first/last letter, sorted middle matches)
+- 18 target keywords: ignore, previous, instructions, disregard, forget, override, exfiltrate, forward, secrets, bypass, system, developer, jailbreak, pretend, reveal, delete, execute, command
+- Example: "ignroe" -> "ignore", "prevoius" -> "previous"
+
+### 7. Hex Encoding Detection (checkHexInjections)
+- Detects \xNN sequences (10+ chars) and raw hex strings (10+ hex pairs)
+- Decodes to UTF-8, validates printability, scans against OBFUSCATION_KEYWORDS
+- Complements existing base64 detection
+
+### 8. HTML Exfiltration Detection (scanForHtmlExfiltration)
+- <img> with external src (excludes localhost/127.0.0.1)
+- HTML event handlers (onerror, onload, etc.) on img/svg/iframe/video/audio/embed/object
+- <iframe> with external src
+- OWASP-listed attack vector
+
+### 9. Rate Anomaly Detection
+- Sliding window counter in before_tool_call
+- Configurable threshold (default: 30 calls/min)
+- Blocks in strictMode, warns in permissive
+- Category: "rate-anomaly" in audit log
+
+### 10. Output Monitoring (message_sending hook)
+- Scans assistant output for injection patterns and sensitive data
+- Detects system prompt leakage
+- Completes the 4-hook security chain
 
 ## Severity Logic
 - CRITICAL: 2+ high-severity patterns OR credential extraction

@@ -11,6 +11,7 @@ export type ScanCategory =
   | "exfiltration"
   | "tool-abuse"
   | "phishing"
+  | "rate-anomaly"
   | "none";
 
 export interface ScanResult {
@@ -23,7 +24,7 @@ export interface ScanResult {
 export interface AuditEntry {
   id: string;
   timestamp: string;
-  hook: "message_received" | "before_tool_call" | "tool_result_persist" | "manual";
+  hook: "message_received" | "before_tool_call" | "tool_result_persist" | "message_sending" | "manual";
   toolName?: string;
   severity: Severity;
   category: ScanCategory;

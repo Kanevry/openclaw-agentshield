@@ -116,7 +116,7 @@ function normalizeText(text: string): string {
 
 // ── Base64 Detection ─────────────────────────────────────────────────
 
-const BASE64_INJECTION_KEYWORDS: readonly string[] = [
+const OBFUSCATION_KEYWORDS: readonly string[] = [
   "ignore previous",
   "ignore all previous",
   "forget your instructions",
@@ -155,13 +155,118 @@ function checkBase64Injections(text: string): string[] {
     } catch {
       continue;
     }
-    for (const keyword of BASE64_INJECTION_KEYWORDS) {
+    for (const keyword of OBFUSCATION_KEYWORDS) {
       if (decoded.includes(keyword)) {
         matches.push(`base64("${keyword}")`);
       }
     }
   }
   return matches;
+}
+
+// ── Typoglycemia Detection ──────────────────────────────────────────
+// OWASP LLM Prompt Injection Prevention: detect words with scrambled middle letters
+// e.g., "ignroe" matches "ignore", "prevoius" matches "previous"
+
+const TYPOGLYCEMIA_TARGETS: readonly string[] = [
+  "ignore", "previous", "instructions", "disregard", "forget",
+  "override", "exfiltrate", "forward", "secrets", "bypass",
+  "system", "developer", "jailbreak", "pretend", "reveal",
+  "delete", "execute", "command",
+] as const;
+
+function isTypoglycemiaMatch(word: string, target: string): boolean {
+  if (word.length !== target.length || word.length < 4) return false;
+  if (word[0] !== target[0] || word[word.length - 1] !== target[target.length - 1]) return false;
+  if (word === target) return false; // exact match is not typoglycemia
+  const wordMiddle = word.slice(1, -1).split("").sort().join("");
+  const targetMiddle = target.slice(1, -1).split("").sort().join("");
+  return wordMiddle === targetMiddle;
+}
+
+export function checkTypoglycemia(text: string): string[] {
+  const matches: string[] = [];
+  const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g);
+  if (!words) return matches;
+
+  for (const word of words) {
+    for (const target of TYPOGLYCEMIA_TARGETS) {
+      if (isTypoglycemiaMatch(word, target)) {
+        matches.push(`typo("${word}"→"${target}")`);
+        break;
+      }
+    }
+  }
+  return matches;
+}
+
+// ── Hex Encoding Detection ──────────────────────────────────────────
+
+const HEX_SEGMENT_RE = /(?:(?:\\x[0-9a-f]{2}){10,}|(?:[0-9a-f]{2}){10,})/gi;
+
+function decodeHexSegment(segment: string): string | null {
+  try {
+    let hex: string;
+    if (segment.includes("\\x")) {
+      hex = segment.replace(/\\x/g, "");
+    } else {
+      hex = segment;
+    }
+    if (hex.length % 2 !== 0) return null;
+    const bytes = Buffer.from(hex, "hex");
+    const decoded = bytes.toString("utf-8");
+    if (!/^[\x20-\x7E\t\n\r]+$/.test(decoded)) return null;
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
+export function checkHexInjections(text: string): string[] {
+  const matches: string[] = [];
+  const segments = text.match(HEX_SEGMENT_RE);
+  if (!segments) return matches;
+
+  for (const segment of segments) {
+    const decoded = decodeHexSegment(segment);
+    if (!decoded) continue;
+    const lower = decoded.toLowerCase();
+    for (const keyword of OBFUSCATION_KEYWORDS) {
+      if (lower.includes(keyword)) {
+        matches.push(`hex("${keyword}")`);
+      }
+    }
+  }
+  return matches;
+}
+
+// ── HTML Exfiltration Detection ─────────────────────────────────────
+
+const HTML_EXFIL_PATTERNS: readonly RegExp[] = [
+  /<img\b[^>]+\bsrc\s*=\s*["'][^"']*https?:\/\/(?!localhost|127\.0\.0\.1)[^"']+/i,
+  /<(?:img|svg|iframe|video|audio|source|embed|object)\b[^>]+\bon\w+\s*=/i,
+  /<iframe\b[^>]+\bsrc\s*=\s*["'][^"']*https?:\/\/[^"']+/i,
+] as const;
+
+export function scanForHtmlExfiltration(text: string): ScanResult {
+  if (text.length > MAX_SCAN_LENGTH) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
+  const matched: string[] = [];
+  for (const pattern of HTML_EXFIL_PATTERNS) {
+    if (pattern.test(text)) {
+      matched.push(pattern.source);
+    }
+  }
+  if (matched.length === 0) {
+    return { detected: false, patterns: [], severity: "none", category: "none" };
+  }
+  return {
+    detected: true,
+    patterns: matched,
+    severity: matched.length > 1 ? "high" : "medium",
+    category: "exfiltration",
+  };
 }
 
 // ── Sensitive Data Detection ─────────────────────────────────────────
@@ -196,6 +301,12 @@ export function scanForInjection(text: string): ScanResult {
 
   const base64Hits = checkBase64Injections(normalized);
   matched.push(...base64Hits);
+
+  const hexHits = checkHexInjections(normalized);
+  matched.push(...hexHits);
+
+  const typoHits = checkTypoglycemia(normalized);
+  matched.push(...typoHits);
 
   if (matched.length === 0) {
     return { detected: false, patterns: [], severity: "none", category: "none" };
@@ -265,6 +376,11 @@ export function scanWriteContent(content: string): ScanResult {
     }
   }
 
+  const htmlResult = scanForHtmlExfiltration(content);
+  if (htmlResult.detected) {
+    matched.push(...htmlResult.patterns.map((p) => `html-exfil:${p}`));
+  }
+
   const injectionResult = scanForInjection(content);
   if (injectionResult.detected) {
     matched.push(...injectionResult.patterns.map((p) => `injection:${p}`));
@@ -278,7 +394,7 @@ export function scanWriteContent(content: string): ScanResult {
     detected: true,
     patterns: matched,
     severity: matched.length > 1 ? "high" : "medium",
-    category: "tool-abuse",
+    category: htmlResult.detected ? "exfiltration" : "tool-abuse",
   };
 }
 

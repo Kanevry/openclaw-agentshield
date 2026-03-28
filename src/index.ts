@@ -70,7 +70,7 @@ const SSE_HEARTBEAT_MS = 15_000;
 
 function getOutcome(
   detected: boolean,
-  hook: "message_received" | "before_tool_call" | "tool_result_persist" | "manual",
+  hook: "message_received" | "before_tool_call" | "tool_result_persist" | "message_sending" | "manual",
   strictMode?: boolean,
 ): "blocked" | "warned" | "allowed" {
   if (!detected) return "allowed";
@@ -81,6 +81,23 @@ function getOutcome(
 // ── Shared State ─────────────────────────────────────────────────────
 
 const auditLog = new AuditLog(1000);
+const toolCallTimestamps: number[] = [];
+
+// ── Rate Anomaly Detection ──────────────────────────────────────────
+
+function checkRateAnomaly(
+  timestamps: number[],
+  threshold: number,
+  windowMs = 60_000,
+): { exceeded: boolean; callsInWindow: number } {
+  const now = Date.now();
+  const cutoff = now - windowMs;
+  let i = 0;
+  while (i < timestamps.length && (timestamps[i] ?? 0) < cutoff) i++;
+  if (i > 0) timestamps.splice(0, i);
+  timestamps.push(now);
+  return { exceeded: timestamps.length > threshold, callsInWindow: timestamps.length };
+}
 
 // ── Plugin Entry ─────────────────────────────────────────────────────
 
@@ -126,6 +143,27 @@ export default {
         (event: BeforeToolCallEvent, ctx: PluginContext): BeforeToolCallResult | undefined => {
           const { toolName, params } = event;
           const config = ctx.config;
+
+          // Rate anomaly check (before any scanning — cheap early exit)
+          const rate = checkRateAnomaly(toolCallTimestamps, config.rateLimit ?? 30);
+          if (rate.exceeded) {
+            auditLog.add({
+              hook: "before_tool_call",
+              toolName,
+              severity: "high",
+              category: "rate-anomaly",
+              patterns: ["rate-limit-exceeded"],
+              outcome: getOutcome(true, "before_tool_call", config.strictMode),
+              details: `Rate anomaly: ${rate.callsInWindow} calls/min (threshold: ${config.rateLimit ?? 30})`,
+            });
+
+            if (config.strictMode) {
+              return {
+                block: true,
+                blockReason: `AgentShield: Rate limit exceeded — ${rate.callsInWindow} tool calls in 60s (max ${config.rateLimit ?? 30})`,
+              };
+            }
+          }
 
           // Exec command scanning
           if (toolName === "exec" || toolName === "shell" || toolName === "bash") {
@@ -259,6 +297,32 @@ export default {
           return undefined;
         },
       ),
+    );
+
+    // ── Hook: message_sending (Output Monitoring) ────────────────────
+    api.on(
+      "message_sending",
+      safeHandler("message_sending", (event: { message: import("./types/openclaw.js").AgentMessage }, _ctx: PluginContext) => {
+        const { message } = event;
+        if (message.role !== "assistant") return;
+
+        const result = scanForInjection(message.content);
+        const sensitiveResult = scanForSensitiveData(message.content);
+
+        if (result.detected || sensitiveResult.detected) {
+          const combined = result.detected ? result : sensitiveResult;
+          auditLog.add({
+            hook: "message_sending",
+            severity: combined.severity,
+            category: combined.category,
+            patterns: combined.patterns,
+            outcome: getOutcome(true, "message_sending"),
+            details: result.detected
+              ? `Potential prompt leakage in agent output: ${result.patterns.join(", ")}`
+              : `Sensitive data in agent output: ${sensitiveResult.patterns.join(", ")}`,
+          });
+        }
+      }),
     );
 
     // ── Tool: shield_scan ───────────────────────────────────────────
@@ -404,7 +468,7 @@ export default {
       },
     });
 
-    console.log("[AgentShield] Plugin registered — 3 hooks, 2 tools, 4 routes");
+    console.log("[AgentShield] Plugin registered — 4 hooks, 2 tools, 4 routes");
   },
 };
 
@@ -549,18 +613,30 @@ function getDashboardHtml(): string {
       eventsEl.insertBefore(div, eventsEl.firstChild);
     }
 
+    const MAX_DOM_EVENTS = 100;
+
     // SSE Connection
     const es = new EventSource('/agentshield/events');
     es.onmessage = (e) => {
       const entry = JSON.parse(e.data);
       addEvent(entry);
+      // Cap DOM events
+      while (eventsEl.children.length > MAX_DOM_EVENTS) {
+        eventsEl.removeChild(eventsEl.lastChild);
+      }
       // Re-fetch stats
-      fetch('/agentshield/api/stats').then(r => r.json()).then(updateStats).catch(() => {});
+      fetch('/agentshield/api/stats').then(r => r.json()).then(updateStats).catch(() => {
+        document.getElementById('uptime').textContent = 'Stats fetch failed';
+      });
     };
     es.addEventListener('stats', (e) => updateStats(JSON.parse(e.data)));
+    es.onopen = () => {
+      document.getElementById('status-dot').className = 'w-3 h-3 bg-green-500 rounded-full pulse-dot';
+      document.getElementById('uptime').textContent = 'Connected';
+    };
     es.onerror = () => {
       document.getElementById('status-dot').className = 'w-3 h-3 bg-red-500 rounded-full';
-      document.getElementById('uptime').textContent = 'Disconnected';
+      document.getElementById('uptime').textContent = 'Disconnected — reconnecting...';
     };
 
     // Initial stats
