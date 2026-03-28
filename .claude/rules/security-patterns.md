@@ -5,10 +5,10 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 
 # Security Scanner Patterns
 
-## Summary (verifiziert 28.03.2026, Session E)
-- **130+ Detection Patterns** (142 total primitives): 50 injection + 15 exec + 6 write + 22 sensitive data + 11 base64/hex/rot13 keywords + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 3 HTML exfil
-- **14 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
-- **340 Tests** (5 test files), **60 Attack Corpus Cases**
+## Summary (verifiziert 28.03.2026, Session F)
+- **142+ Detection Patterns** (155+ total primitives): 50 injection + 15 exec + 6 write + 22 sensitive data + 7 PII + 11 base64/hex/rot13 keywords + 18 typoglycemia targets + 2 markdown exfil + 8 SSRF + 7 path traversal + 3 HTML exfil + TOOL_RISK_MAP
+- **16 Detection Techniques** (conceptual), **9 ScanCategory values** in code: injection, exfiltration, tool-abuse, phishing, rate-anomaly, markdown-exfil, ssrf, path-traversal, none
+- **366 Tests** (5 test files), **70 Attack Corpus Cases**
 - **4 Hooks, 2 Tools, 4 Routes**
 - **Severity Centralization**: `calcSeverity()` unified severity logic across all scan functions
 - **DoS-Schutz**: MAX_SCAN_LENGTH = 1MB (Inputs >1MB werden uebersprungen)
@@ -129,6 +129,28 @@ globs: ["src/**/*.ts", "snippets/security-scanner.ts"]
 - Home directory access: ~/.ssh, ~/.aws, ~/.env
 - Null byte injection: %00 in file paths
 - Category: "path-traversal" in audit log
+
+### 16. PII Detection (scanForSensitiveData) — 7 Patterns
+- Visa Card Numbers: 4[0-9]{12}(?:[0-9]{3})?
+- Mastercard Numbers: 5[1-5][0-9]{14}
+- Amex Numbers: 3[47][0-9]{13}
+- IBAN: [A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}
+- US Social Security Numbers: [0-9]{3}-[0-9]{2}-[0-9]{4}
+- Email Addresses: standard email pattern
+- Phone Numbers: international format with optional country code
+- Uses existing "exfiltration" ScanCategory (no new category needed)
+- Integrated into scanForSensitiveData with baseLevel "high"
+
+### 17. OWASP LLM05 Tool Risk Classification
+- Audit-only risk logging in before_tool_call hook
+- TOOL_RISK_MAP classifies tools by risk level: critical, high, medium, low
+- Critical: Bash, shell execution tools
+- High: file write, code execution, web fetch tools
+- Medium: file read, search, database query tools
+- Low: display, formatting, status tools
+- Risk level logged in audit entry alongside existing threat detection
+- Does NOT block — informational overlay for security posture visibility
+- Aligned with OWASP Top 10 for LLM Applications: LLM05 (Improper Output Handling / Supply Chain)
 
 ## Severity Logic (centralized via calcSeverity)
 - CRITICAL: hasHighSeverity pattern OR 3+ matches, OR 2+ matches with baseLevel "high"
